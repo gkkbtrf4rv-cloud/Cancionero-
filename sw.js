@@ -1,7 +1,6 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v3";
+const CACHE_NAME = "cancionero-tuna-derecho-v5";
 const ASSETS_TO_CACHE = [
   "/",
-  "/index.html",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png"
@@ -29,11 +28,24 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: siempre devuelve una Response válida, nunca undefined
+// Fetch: siempre devuelve una Response válida, nunca undefined,
+// y NUNCA una respuesta marcada como "redirigida" (Safari la rechaza en navegación)
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(handleFetch(event.request));
 });
+
+// Reconstruye la respuesta si vino de una redirección interna,
+// para que pierda el flag response.redirected antes de servirla
+async function stripRedirectFlag(response) {
+  if (!response || !response.redirected) return response;
+  const body = await response.clone().arrayBuffer();
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  });
+}
 
 async function handleFetch(request) {
   try {
@@ -42,9 +54,10 @@ async function handleFetch(request) {
     if (cached) {
       // Ya hay copia local: la servimos de inmediato y actualizamos en segundo plano
       fetch(request)
-        .then((networkResponse) => {
+        .then(async (networkResponse) => {
           if (networkResponse && networkResponse.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
+            const clean = await stripRedirectFlag(networkResponse);
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clean.clone()));
           }
         })
         .catch(() => {
@@ -55,14 +68,15 @@ async function handleFetch(request) {
 
     // No hay copia local todavía: vamos a la red
     const networkResponse = await fetch(request);
-    if (networkResponse && networkResponse.ok) {
+    const clean = await stripRedirectFlag(networkResponse);
+    if (clean && clean.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      cache.put(request, clean.clone());
     }
-    return networkResponse;
+    return clean;
   } catch (err) {
     // Última salida: si es una navegación, intenta servir el index cacheado
-    const fallbackIndex = await caches.match("/index.html") || await caches.match("/");
+    const fallbackIndex = await caches.match("/");
     if (fallbackIndex) return fallbackIndex;
 
     return new Response(
