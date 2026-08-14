@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enviar notificación · Cancionero Tuna de Derecho</title>
+<style>
+  :root{
+    --vino-oscuro:#3a0a10;
+    --vino:#4a0d16;
+    --dorado:#e4c874;
+    --dorado-suave:#b8862f;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: radial-gradient(ellipse at top, var(--vino) 0%, var(--vino-oscuro) 70%);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    background: rgba(0,0,0,.25);
+    border:1.5px solid var(--dorado);
+    border-radius:16px;
+    padding:28px 24px;
+    color: var(--dorado);
+  }
+  h1{
+    font-size:20px;
+    margin:0 0 20px;
+    text-align:center;
+    letter-spacing:.03em;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    margin:14px 0 6px;
+    color: rgba(228,200,116,.85);
+  }
+  input, textarea{
+    width:100%;
+    padding:11px 12px;
+    border-radius:10px;
+    border:1px solid rgba(228,200,116,.35);
+    background: rgba(255,255,255,.06);
+    color:#fff;
+    font-size:15px;
+    font-family: inherit;
+  }
+  textarea{ min-height:90px; resize:vertical; }
+  button{
+    width:100%;
+    margin-top:20px;
+    padding:13px;
+    border:none;
+    border-radius:24px;
+    background: linear-gradient(135deg, var(--dorado), var(--dorado-suave));
+    color: var(--vino-oscuro);
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+  }
+  button:active{ transform: scale(.98); }
+  button:disabled{ opacity:.6; }
+  #estado{
+    margin-top:14px;
+    font-size:14px;
+    text-align:center;
+    min-height:20px;
+  }
+  .ok{ color:#8fd694; }
+  .err{ color:#f08a8a; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>📣 Enviar notificación</h1>
+    <form id="formNotif">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" required autocomplete="current-password">
+
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" required maxlength="60" placeholder="Ej. ¡Hay ensayo hoy!">
+
+      <label for="mensaje">Mensaje</label>
+      <textarea id="mensaje" required maxlength="200" placeholder="Ej. Nos vemos a las 6pm en el patio central."></textarea>
+
+      <button type="submit" id="btnEnviar">Enviar a todos</button>
+    </form>
+    <div id="estado"></div>
+  </div>
+
+<script>
+  const form = document.getElementById('formNotif');
+  const estado = document.getElementById('estado');
+  const btnEnviar = document.getElementById('btnEnviar');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btnEnviar.disabled = true;
+    estado.textContent = 'Enviando...';
+    estado.className = '';
+
+    try {
+      const res = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: document.getElementById('password').value,
+          title: document.getElementById('titulo').value,
+          body: document.getElementById('mensaje').value
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        estado.textContent = data.error || 'Ocurrió un error';
+        estado.className = 'err';
+      } else {
+        estado.textContent = `Enviado a ${data.enviados} de ${data.total} suscriptores.`;
+        estado.className = 'ok';
+        document.getElementById('mensaje').value = '';
+      }
+    } catch (err) {
+      estado.textContent = 'No se pudo conectar con el servidor.';
+      estado.className = 'err';
+    } finally {
+      btnEnviar.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
