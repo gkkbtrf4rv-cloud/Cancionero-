@@ -32,6 +32,13 @@ export default async function handler(req, res) {
         return;
       }
       const base = { id, mote: meta?.mote || 'Sin identificar', username: meta?.username || '—' };
+      if (meta?.userId) {
+        const user = await kv.get(`user:${meta.userId}`);
+        if (!user || user.approved !== true) {
+          details.push({ ...base, status: 'omitido', error: 'Usuario sin acceso autorizado', at: new Date().toISOString() });
+          return;
+        }
+      }
       try {
         const response = await webpush.sendNotification(sub, payload);
         enviados++;

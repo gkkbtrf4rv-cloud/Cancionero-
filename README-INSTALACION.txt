@@ -1,47 +1,51 @@
-CANCIONERO TUNA DE DERECHO — ACTUALIZACIÓN DE CUENTAS Y NOTIFICACIONES
+CANCIONERO TUNA DE DERECHO — VERSIÓN PRIVADA CON AUTORIZACIÓN
 
-ESTRUCTURA A SUBIR A VERCEL
-/
-  index.html
-  admin.html
-  sw.js
-  manifest.json
-  icon-192.png
-  icon-512.png
-  package.json
-  vercel.json
-  /api
-    register.js
-    login.js
-    me.js
-    logout.js
-    subscribe.js
-    subscribers.js
-    send-notification.js
-  /lib
-    auth.js
-
-VARIABLES DE ENTORNO EN VERCEL
-- VAPID_PUBLIC_KEY
-- VAPID_PRIVATE_KEY
-- ADMIN_PASSWORD
-- VAPID_SUBJECT (opcional; ejemplo: mailto:correo@dominio.com)
-- Las variables de conexión de @vercel/kv / Redis que ya use tu proyecto.
+FLUJO DE ACCESO
+1. El integrante entra al sitio.
+2. Si no tiene cuenta, se registra con Mote + Usuario + Contraseña.
+3. La cuenta se crea como PENDIENTE y NO puede ver el cancionero.
+4. El administrador entra a /admin.html con ADMIN_PASSWORD.
+5. En “Acceso al cancionero”, pulsa “Dar acceso” al integrante.
+6. El integrante pulsa “Comprobar de nuevo” o vuelve a entrar.
+7. Solo si está autorizado, la app descarga el contenido del cancionero desde /api/cancionero.
 
 IMPORTANTE
-1. VAPID_PUBLIC_KEY debe ser EXACTAMENTE la misma que aparece en index.html.
-2. Tras desplegar, los integrantes deben crear cuenta o iniciar sesión.
-3. Para identificar a quién recibe notificaciones, cada dispositivo debe abrir el Cancionero con su cuenta y activar notificaciones.
-4. Las suscripciones antiguas pueden aparecer como "Sin identificar" hasta que el integrante abra la nueva versión e inicie sesión.
-5. En iPhone: abrir en Safari > Compartir > Añadir a pantalla de inicio > abrir desde el icono > iniciar sesión > activar notificaciones.
-6. Las contraseñas de integrantes NO se guardan en texto plano: se derivan con scrypt + salt.
-7. Las sesiones duran 30 días y se guardan mediante token aleatorio.
-8. El panel /admin.html permite ver mote, usuario, dispositivo, última actividad y resultado del último push.
+- Las canciones ya NO están incrustadas en index.html. El contenido se entrega desde /api/cancionero únicamente a sesiones autorizadas.
+- Si el administrador quita acceso, una sesión abierta deja de poder descargar el cancionero al volver a cargar. Las notificaciones también se omiten para usuarios sin acceso.
+- Las contraseñas de integrantes se guardan con scrypt + salt, no en texto plano.
 
-PRUEBA RECOMENDADA
-- Crear una cuenta de prueba.
-- Activar notificaciones.
-- Entrar a /admin.html y pulsar “Actualizar estado de integrantes”.
-- Confirmar que aparece el mote de prueba.
-- Enviar una notificación.
-- Confirmar que el panel indica “enviado”.
+PANEL DE ADMINISTRACIÓN
+Ruta: /admin.html
+Permite:
+- Dar o quitar acceso a usuarios.
+- Ver mote, usuario, dispositivos y último acceso.
+- Ver estado de suscripciones push.
+- Enviar notificaciones y ver entregas/fallos.
+
+VARIABLES EN VERCEL
+ADMIN_PASSWORD=tu_contraseña_de_administrador
+VAPID_PUBLIC_KEY=la misma clave pública usada por el index
+VAPID_PRIVATE_KEY=tu clave privada VAPID
+VAPID_SUBJECT=mailto:tu-correo@dominio.com (opcional)
+
+BASE DE DATOS
+El proyecto usa @vercel/kv según la configuración actual. Debe existir una integración KV/Redis compatible con esas variables en Vercel.
+
+ARCHIVOS NUEVOS/IMPORTANTES
+/api/register.js        crea cuentas pendientes
+/api/login.js           inicia sesión
+/api/me.js              valida la sesión y estado de acceso
+/api/users.js           administración de autorizaciones
+/api/cancionero.js      entrega canciones solo a usuarios autorizados
+/api/subscribe.js       registra notificaciones solo para usuarios autorizados
+/api/subscribers.js     lista dispositivos para admin
+/api/send-notification.js envía y registra resultados
+/lib/auth.js            sesiones y contraseñas
+/lib/canciones.js       contenido protegido del cancionero
+
+DESPUÉS DE SUBIR
+1. Abre /admin.html y escribe tu contraseña de administrador.
+2. Pulsa “Actualizar usuarios”.
+3. Autoriza manualmente las cuentas que reconozcas por su mote.
+4. Pide a cada integrante que vuelva a abrir la app y pulse “Comprobar de nuevo”.
+5. Luego podrá activar notificaciones y quedará asociado a su mote.

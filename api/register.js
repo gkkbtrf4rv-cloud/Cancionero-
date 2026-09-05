@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     const { salt, hash } = await hashPassword(password);
     const now = new Date().toISOString();
-    const user = { id: userId, username, mote, passwordSalt: salt, passwordHash: hash, createdAt: now, lastLoginAt: now };
+    const user = { id: userId, username, mote, passwordSalt: salt, passwordHash: hash, createdAt: now, lastLoginAt: now, approved: false, accessStatus: 'pending', approvedAt: null };
     await kv.set(`user:${userId}`, user);
     await kv.sadd('users:all', userId);
 

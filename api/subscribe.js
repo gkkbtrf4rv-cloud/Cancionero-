@@ -6,6 +6,7 @@ export default async function handler(req, res) {
   try {
     const session = await getSessionUser(req, req.body?.token || null);
     if (!session) return res.status(401).json({ error: 'Inicia sesión para registrar este dispositivo.' });
+    if (session.user.approved !== true) return res.status(403).json({ error: 'Tu cuenta aún no está autorizada para usar el cancionero.' });
 
     const subscription = req.body?.subscription || req.body;
     if (!subscription?.endpoint) return res.status(400).json({ error: 'Suscripción inválida' });
