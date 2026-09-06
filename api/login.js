@@ -11,6 +11,9 @@ export default async function handler(req, res) {
     if (!user || !(await verifyPassword(password, user.passwordSalt, user.passwordHash))) {
       return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
     }
+    if (user.emailVerified === false) {
+      return res.status(403).json({ error: 'Primero verifica tu correo electrónico. Revisa tu bandeja de entrada o solicita un nuevo enlace.' });
+    }
     user.lastLoginAt = new Date().toISOString();
     await kv.set(`user:${userId}`, user);
     const token = await createSession(userId);

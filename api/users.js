@@ -13,6 +13,7 @@ export default async function handler(req, res) {
       const approved = req.body?.approved === true;
       const user = await kv.get(`user:${userId}`);
       if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+      if (approved && user.emailVerified === false) return res.status(409).json({ error: 'El usuario todavía no ha verificado su correo.' });
       const wasApproved = user.approved === true;
       user.approved = approved;
       user.accessStatus = approved ? 'approved' : 'revoked';
@@ -33,9 +34,11 @@ export default async function handler(req, res) {
     for (const id of ids) {
       const u = await kv.get(`user:${id}`);
       if (!u) continue;
+      // Las cuentas nuevas no aparecen al administrador hasta verificar su correo.
+      if (u.emailVerified === false) continue;
       const subIds = await kv.smembers(`user:${id}:subs`);
       users.push({
-        id:u.id, email:u.email || u.username || '', mote:u.mote, approved:u.approved === true,
+        id:u.id, email:u.email || u.username || '', mote:u.mote, emailVerified:u.emailVerified !== false, approved:u.approved === true,
         accessStatus:u.approved === true ? 'approved' : (u.accessStatus || 'pending'),
         createdAt:u.createdAt || null, lastLoginAt:u.lastLoginAt || null, devices:subIds.length
       });

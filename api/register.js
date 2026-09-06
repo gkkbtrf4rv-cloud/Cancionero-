@@ -1,6 +1,9 @@
+import crypto from 'crypto';
 import { kv } from '@vercel/kv';
-import { normalizeEmail, normalizeMote, isValidEmail, userIdFromEmail, hashPassword, createSession, publicUser } from '../lib/auth.js';
-import { sendEmail, registrationEmail, adminRequestEmail, getAppUrl } from '../lib/email.js';
+import { normalizeEmail, normalizeMote, isValidEmail, userIdFromEmail, hashPassword, publicUser } from '../lib/auth.js';
+import { sendEmail, verificationEmail, getAppUrl } from '../lib/email.js';
+
+const VERIFY_TTL_SECONDS = 60 * 60 * 48;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
@@ -15,24 +18,37 @@ export default async function handler(req, res) {
 
     const userId = userIdFromEmail(email);
     const existing = await kv.get(`user:${userId}`);
-    if (existing) return res.status(409).json({ error: 'Ya existe una cuenta con ese correo.' });
+    if (existing) {
+      if (existing.emailVerified === false) {
+        return res.status(409).json({ error: 'Ya existe una cuenta con ese correo, pero falta verificarlo. Usa “Reenviar verificación”.' });
+      }
+      return res.status(409).json({ error: 'Ya existe una cuenta con ese correo.' });
+    }
 
     const { salt, hash } = await hashPassword(password);
     const now = new Date().toISOString();
-    const user = { id:userId, email, mote, passwordSalt:salt, passwordHash:hash, createdAt:now, lastLoginAt:now, approved:false, accessStatus:'pending', approvedAt:null };
+    const user = {
+      id:userId, email, mote,
+      passwordSalt:salt, passwordHash:hash,
+      createdAt:now, lastLoginAt:null,
+      emailVerified:false, emailVerifiedAt:null,
+      approved:false, accessStatus:'unverified', approvedAt:null
+    };
     await kv.set(`user:${userId}`, user);
     await kv.sadd('users:all', userId);
 
-    const token = await createSession(userId);
+    const verifyToken = crypto.randomBytes(32).toString('base64url');
+    await kv.set(`verify:${verifyToken}`, userId, { ex: VERIFY_TTL_SECONDS });
     const appUrl = getAppUrl(req);
-    const userMail = registrationEmail({ mote, email, appUrl });
-    const adminMail = adminRequestEmail({ mote, email, appUrl });
-    const [confirmation, adminNotice] = await Promise.all([
-      sendEmail({ to:email, ...userMail }),
-      sendEmail({ to:process.env.ADMIN_EMAIL, ...adminMail })
-    ]);
+    const verifyUrl = `${appUrl}/api/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    const mail = verificationEmail({ mote, email, verifyUrl });
+    const sent = await sendEmail({ to:email, ...mail });
 
-    return res.status(201).json({ ok:true, token, user:publicUser(user), emails:{ confirmation:confirmation.ok === true, adminNotice:adminNotice.ok === true } });
+    return res.status(201).json({
+      ok:true,
+      user:publicUser(user),
+      verificationEmailSent: sent.ok === true
+    });
   } catch (err) {
     console.error('Error registrando usuario:', err);
     return res.status(500).json({ error: 'No se pudo crear la cuenta.' });
