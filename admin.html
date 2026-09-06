@@ -10,9 +10,9 @@
 <body><div class="wrap">
 <div class="card"><h1>📣 Notificaciones · Tuna de Derecho</h1>
 <form id="formNotif"><label>Contraseña de administrador</label><input type="password" id="password" required autocomplete="current-password"><div class="row"><div><label>Título</label><input id="titulo" required maxlength="60" placeholder="Ej. ¡Hay ensayo hoy!"></div><div><label>URL al abrir (opcional)</label><input id="url" placeholder="/"></div></div><label>Mensaje</label><textarea id="mensaje" required maxlength="200" placeholder="Ej. Nos vemos a las 2pm frente al teatro."></textarea><div class="actions"><button type="submit" id="btnEnviar">Enviar a todos</button><button type="button" class="secondary" id="btnEstado">Actualizar estado de integrantes</button><button type="button" class="secondary" id="btnTestEmail">✉️ Probar correo</button><button type="button" class="secondary" id="btnCheckUpdate">📚 Comprobar cambios</button><button type="button" id="btnNotifyUpdate">🔔 Notificar actualización</button></div></form><div id="estado" class="msg"></div><div id="updateStatus" class="msg"></div><div id="summary" class="summary"></div></div>
-<div class="card"><h2>👥 Dispositivos registrados</h2><p style="font-size:13px;color:#d6cda9">Aquí puedes ver el mote asociado a cada dispositivo y el resultado del último intento de envío.</p><div class="table-wrap"><table><thead><tr><th>Mote</th><th>Correo</th><th>Dispositivo</th><th>Instalada</th><th>Última actividad</th><th>Último envío</th></tr></thead><tbody id="subsBody"><tr><td colspan="6">Pulsa “Actualizar estado de integrantes”.</td></tr></tbody></table></div></div>
+<div class="card"><h2>👥 Dispositivos registrados</h2><p style="font-size:13px;color:#d6cda9">Los dispositivos se agrupan por mote para que cada integrante aparezca una sola vez.</p><div class="table-wrap"><table><thead><tr><th>Mote</th><th>Correo</th><th>Dispositivo</th><th>Instalada</th><th>Última actividad</th><th>Último envío</th></tr></thead><tbody id="subsBody"><tr><td colspan="6">Pulsa “Actualizar estado de integrantes”.</td></tr></tbody></table></div></div>
 
-<div class="card"><h2>🔐 Acceso al cancionero</h2><p style="font-size:13px;color:#d6cda9">Las cuentas se separan por estado para que siempre puedas ver quién tiene acceso y recuperar fácilmente a alguien si se lo quitaste por error.</p><div class="actions"><button type="button" class="secondary" id="btnUsuarios">Actualizar usuarios</button></div><div id="usersSummary" class="summary"></div></div>
+<div class="card"><h2>🔐 Acceso al cancionero</h2><p style="font-size:13px;color:#d6cda9">Los registros con el mismo mote se agrupan en una sola fila. Si un integrante tiene varias cuentas, puedes administrar todas juntas.</p><div class="actions"><button type="button" class="secondary" id="btnUsuarios">Actualizar usuarios</button></div><div id="usersSummary" class="summary"></div></div>
 
 <div class="card"><h2>⏳ Solicitudes pendientes</h2><p style="font-size:13px;color:#d6cda9">Integrantes que verificaron su correo y todavía esperan tu autorización.</p><div class="table-wrap"><table><thead><tr><th>Mote</th><th>Correo</th><th>Dispositivos</th><th>Último acceso</th><th>Acción</th></tr></thead><tbody id="pendingUsersBody"><tr><td colspan="5">Pulsa “Actualizar usuarios”.</td></tr></tbody></table></div></div>
 
@@ -25,23 +25,95 @@ const $=id=>document.getElementById(id); const estado=$('estado'),summary=$('sum
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function fmt(d){if(!d)return '—';try{return new Date(d).toLocaleString('es-MX')}catch{return d}}
 function renderSummary(d){summary.innerHTML=`<span class="pill">Total: ${d.total??0}</span><span class="pill">✅ Enviados: ${d.enviados??0}</span><span class="pill">❌ Fallidos: ${d.fallidos??0}</span><span class="pill">🗑 Eliminados: ${d.eliminados??0}</span>`;}
-function renderRows(rows){body.innerHTML=rows.length?rows.map(r=>{const ld=r.lastDelivery;const cls=ld?.status==='enviado'?'st-ok':ld?.status==='fallido'?'st-bad':'st-none';const txt=ld?`${ld.status}${ld.statusCode?' ('+ld.statusCode+')':''}`:'Sin envíos';return `<tr><td><strong>${esc(r.mote)}</strong></td><td>${esc(r.email)}</td><td>${esc(r.platform||'—')}</td><td>${r.installed?'Sí':'No'}</td><td>${fmt(r.lastSeenAt)}</td><td class="${cls}" title="${esc(ld?.error||'')}">${esc(txt)}</td></tr>`}).join(''):'<tr><td colspan="6">No hay dispositivos registrados.</td></tr>';}
-async function post(url,payload){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Error');return d;}
-async function cargar(){estado.textContent='Cargando…';estado.className='msg';try{const d=await post('/api/subscribers',{password:$('password').value});renderRows(d.subscribers||[]);estado.textContent=`${d.total} dispositivo(s) registrado(s).`;estado.className='msg ok';}catch(e){estado.textContent=e.message;estado.className='msg err';}}
-
-function userRow(u,action){return `<tr><td><strong>${esc(u.mote)}</strong></td><td>${esc(u.email)}</td><td>${u.devices??0}</td><td>${fmt(u.lastLoginAt)}</td><td>${action}</td></tr>`;}
-function renderUsers(rows){
-  const pending=rows.filter(u=>u.approved!==true && u.accessStatus!=='revoked');
-  const approved=rows.filter(u=>u.approved===true);
-  const revoked=rows.filter(u=>u.approved!==true && u.accessStatus==='revoked');
-  pendingUsersBody.innerHTML=pending.length?pending.map(u=>userRow(u,`<button onclick="setAccess('${esc(u.id)}',true)">Dar acceso</button>`)).join(''):'<tr><td colspan="5">No hay solicitudes pendientes.</td></tr>';
-  approvedUsersBody.innerHTML=approved.length?approved.map(u=>userRow(u,`<button class="secondary" onclick="setAccess('${esc(u.id)}',false)">Quitar acceso</button>`)).join(''):'<tr><td colspan="5">Todavía no hay integrantes con acceso.</td></tr>';
-  revokedUsersBody.innerHTML=revoked.length?revoked.map(u=>userRow(u,`<button onclick="setAccess('${esc(u.id)}',true)">Restaurar acceso</button>`)).join(''):'<tr><td colspan="5">No hay accesos retirados.</td></tr>';
-  usersSummary.innerHTML=`<span class="pill">⏳ Pendientes: ${pending.length}</span><span class="pill">✅ Con acceso: ${approved.length}</span><span class="pill">⛔ Retirados: ${revoked.length}</span>`;
+function normMote(v=''){return String(v||'Sin mote').trim().toLocaleLowerCase('es-MX').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function unique(arr){return [...new Set(arr.filter(Boolean))];}
+function groupSubs(rows){
+  const map=new Map();
+  for(const r of rows){
+    const key=normMote(r.mote);
+    if(!map.has(key))map.set(key,{mote:r.mote||'Sin mote',rows:[]});
+    map.get(key).rows.push(r);
+  }
+  return [...map.values()].sort((a,b)=>String(a.mote).localeCompare(String(b.mote),'es'));
 }
-async function cargarUsuarios(){estado.textContent='Cargando usuarios…';estado.className='msg';try{const d=await post('/api/users',{password:$('password').value});renderUsers(d.users||[]);estado.textContent=`${d.total} usuario(s) registrado(s).`;estado.className='msg ok';}catch(e){estado.textContent=e.message;estado.className='msg err';}}
-async function setAccess(userId,approved){try{const r=await fetch('/api/users',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('password').value,userId,approved})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Error');estado.textContent=approved?(d.emailSent?'✅ Acceso autorizado y correo de aviso enviado.':`⚠️ Acceso autorizado, pero el correo falló${d.emailError?' — '+d.emailError:''}`):'Acceso retirado.';estado.className='msg ok';await cargarUsuarios();await cargar();}catch(e){estado.textContent=e.message;estado.className='msg err';}}
-window.setAccess=setAccess;
+function renderRows(rows){
+  const groups=groupSubs(rows);
+  body.innerHTML=groups.length?groups.map(g=>{
+    const rs=g.rows;
+    const emails=unique(rs.map(r=>r.email));
+    const platforms={};rs.forEach(r=>{const k=r.platform||'—';platforms[k]=(platforms[k]||0)+1});
+    const platformTxt=Object.entries(platforms).map(([k,n])=>n>1?`${k} ×${n}`:k).join(' · ');
+    const installed=rs.filter(r=>r.installed).length;
+    const lastSeen=rs.map(r=>r.lastSeenAt).filter(Boolean).sort().at(-1)||null;
+    const deliveries=rs.map(r=>r.lastDelivery).filter(Boolean);
+    const enviados=deliveries.filter(d=>d.status==='enviado').length;
+    const fallidos=deliveries.filter(d=>d.status==='fallido').length;
+    const cls=fallidos?'st-bad':enviados?'st-ok':'st-none';
+    const txt=deliveries.length?`${enviados} enviado(s)${fallidos?' · '+fallidos+' fallido(s)':''}`:'Sin envíos';
+    const emailHtml=emails.length<=1?esc(emails[0]||'—'):`<details><summary>${emails.length} registros</summary>${emails.map(e=>`<div>${esc(e)}</div>`).join('')}</details>`;
+    return `<tr><td><strong>${esc(g.mote)}</strong><br><small>${rs.length} dispositivo(s)</small></td><td>${emailHtml}</td><td>${esc(platformTxt)}</td><td>${installed}/${rs.length}</td><td>${fmt(lastSeen)}</td><td class="${cls}">${esc(txt)}</td></tr>`;
+  }).join(''):'<tr><td colspan="6">No hay dispositivos registrados.</td></tr>';
+}
+async function post(url,payload){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Error');return d;}
+async function cargar(){estado.textContent='Cargando…';estado.className='msg';try{const d=await post('/api/subscribers',{password:$('password').value});renderRows(d.subscribers||[]);const motes=groupSubs(d.subscribers||[]).length;estado.textContent=`${motes} mote(s) · ${d.total} dispositivo(s) registrado(s).`;estado.className='msg ok';}catch(e){estado.textContent=e.message;estado.className='msg err';}}
+
+function groupUsers(rows){
+  const map=new Map();
+  for(const u of rows){
+    const key=normMote(u.mote);
+    if(!map.has(key))map.set(key,{mote:u.mote||'Sin mote',users:[]});
+    map.get(key).users.push(u);
+  }
+  return [...map.values()].map(g=>{
+    const us=g.users;
+    const approved=us.filter(u=>u.approved===true).length;
+    const revoked=us.filter(u=>u.approved!==true&&u.accessStatus==='revoked').length;
+    const pending=us.length-approved-revoked;
+    let bucket='pending';
+    if(approved>0) bucket='approved';
+    else if(revoked===us.length) bucket='revoked';
+    return {...g,approvedCount:approved,revokedCount:revoked,pendingCount:pending,bucket};
+  }).sort((a,b)=>String(a.mote).localeCompare(String(b.mote),'es'));
+}
+function groupUserRow(g,action){
+  const us=g.users;
+  const emails=unique(us.map(u=>u.email));
+  const devices=us.reduce((n,u)=>n+(u.devices||0),0);
+  const lastLogin=us.map(u=>u.lastLoginAt).filter(Boolean).sort().at(-1)||null;
+  const emailHtml=emails.length<=1?esc(emails[0]||'—'):`<details><summary>${emails.length} registros</summary>${emails.map(e=>`<div>${esc(e)}</div>`).join('')}</details>`;
+  const status=[];
+  if(g.approvedCount)status.push(`✅ ${g.approvedCount}`);
+  if(g.pendingCount)status.push(`⏳ ${g.pendingCount}`);
+  if(g.revokedCount)status.push(`⛔ ${g.revokedCount}`);
+  return `<tr><td><strong>${esc(g.mote)}</strong><br><small>${us.length} registro(s) · ${status.join(' · ')}</small></td><td>${emailHtml}</td><td>${devices}</td><td>${fmt(lastLogin)}</td><td>${action}</td></tr>`;
+}
+function idsArg(g){return encodeURIComponent(JSON.stringify(g.users.map(u=>u.id)));}
+function renderUsers(rows){
+  const groups=groupUsers(rows);
+  const pending=groups.filter(g=>g.bucket==='pending');
+  const approved=groups.filter(g=>g.bucket==='approved');
+  const revoked=groups.filter(g=>g.bucket==='revoked');
+  pendingUsersBody.innerHTML=pending.length?pending.map(g=>groupUserRow(g,`<button onclick="setAccessGroup('${idsArg(g)}',true)">Dar acceso${g.users.length>1?' a todos':''}</button>`)).join(''):'<tr><td colspan="5">No hay solicitudes pendientes.</td></tr>';
+  approvedUsersBody.innerHTML=approved.length?approved.map(g=>{
+    const mixed=g.pendingCount||g.revokedCount;
+    const action=mixed?`<button onclick="setAccessGroup('${idsArg(g)}',true)">Unificar acceso</button>`:`<button class="secondary" onclick="setAccessGroup('${idsArg(g)}',false)">Quitar acceso</button>`;
+    return groupUserRow(g,action);
+  }).join(''):'<tr><td colspan="5">Todavía no hay integrantes con acceso.</td></tr>';
+  revokedUsersBody.innerHTML=revoked.length?revoked.map(g=>groupUserRow(g,`<button onclick="setAccessGroup('${idsArg(g)}',true)">Restaurar acceso${g.users.length>1?' a todos':''}</button>`)).join(''):'<tr><td colspan="5">No hay accesos retirados.</td></tr>';
+  usersSummary.innerHTML=`<span class="pill">👤 Motes: ${groups.length}</span><span class="pill">🗂 Registros: ${rows.length}</span><span class="pill">⏳ Pendientes: ${pending.length}</span><span class="pill">✅ Con acceso: ${approved.length}</span><span class="pill">⛔ Retirados: ${revoked.length}</span>`;
+}
+async function cargarUsuarios(){estado.textContent='Cargando usuarios…';estado.className='msg';try{const d=await post('/api/users',{password:$('password').value});renderUsers(d.users||[]);estado.textContent=`${groupUsers(d.users||[]).length} mote(s) · ${d.total} registro(s).`;estado.className='msg ok';}catch(e){estado.textContent=e.message;estado.className='msg err';}}
+async function setAccess(userId,approved){const r=await fetch('/api/users',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('password').value,userId,approved})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Error');return d;}
+async function setAccessGroup(encodedIds,approved){
+  const ids=JSON.parse(decodeURIComponent(encodedIds));
+  estado.textContent=`Actualizando ${ids.length} registro(s)…`;estado.className='msg';
+  let ok=0,mail=0,errors=[];
+  for(const id of ids){try{const d=await setAccess(id,approved);ok++;if(d.emailSent)mail++;}catch(e){errors.push(e.message)}}
+  estado.textContent=errors.length?`⚠️ Actualizados ${ok}/${ids.length}. ${errors.join(' · ')}`:(approved?`✅ Acceso aplicado a ${ok} registro(s)${mail?' · '+mail+' correo(s) enviado(s)':''}.`:`✅ Acceso retirado de ${ok} registro(s).`);
+  estado.className=errors.length?'msg err':'msg ok';
+  await cargarUsuarios();await cargar();
+}
+window.setAccessGroup=setAccessGroup;
 $('btnUsuarios').onclick=cargarUsuarios;
 
 $('btnEstado').onclick=cargar;
