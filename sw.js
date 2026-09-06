@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v9";
+const CACHE_NAME = "cancionero-tuna-derecho-v10";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -7,15 +7,29 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
+
+  // Los datos privados del cancionero se guardan por usuario desde index.html,
+  // no en la caché pública del Service Worker.
   if (url.pathname.startsWith('/api/')) return;
-  event.respondWith(handleFetch(event.request));
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirstPage(event.request));
+    return;
+  }
+
+  if (url.origin === self.location.origin) {
+    event.respondWith(staleWhileRevalidate(event.request));
+  }
 });
 
 async function stripRedirectFlag(response) {
@@ -24,27 +38,44 @@ async function stripRedirectFlag(response) {
   return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
 }
 
-async function handleFetch(request) {
+async function networkFirstPage(request) {
   try {
-    const cached = await caches.match(request);
-    if (cached) {
-      fetch(request).then(async (networkResponse) => {
-        if (networkResponse?.ok) {
-          const clean = await stripRedirectFlag(networkResponse);
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clean.clone()));
-        }
-      }).catch(() => {});
-      return cached;
+    const response = await fetch(request, { cache: 'no-store' });
+    const clean = await stripRedirectFlag(response);
+    if (clean && clean.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put('/', clean.clone());
+      await cache.put(request, clean.clone());
     }
-    const networkResponse = await fetch(request);
-    const clean = await stripRedirectFlag(networkResponse);
-    if (clean?.ok) (await caches.open(CACHE_NAME)).put(request, clean.clone());
     return clean;
   } catch (err) {
-    const fallbackIndex = await caches.match("/");
-    if (fallbackIndex) return fallbackIndex;
-    return new Response("Sin conexión y sin versión guardada de esta página todavía.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+    return (await caches.match(request)) || (await caches.match('/')) ||
+      new Response('Sin conexión y sin una versión guardada todavía.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      });
   }
+}
+
+async function staleWhileRevalidate(request) {
+  const cached = await caches.match(request);
+  const networkPromise = fetch(request).then(async (response) => {
+    const clean = await stripRedirectFlag(response);
+    if (clean && clean.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, clean.clone());
+    }
+    return clean;
+  }).catch(() => null);
+
+  if (cached) {
+    networkPromise.catch(() => {});
+    return cached;
+  }
+
+  const network = await networkPromise;
+  if (network) return network;
+  return (await caches.match('/')) || new Response('Sin conexión.', { status: 503 });
 }
 
 self.addEventListener("push", (event) => {

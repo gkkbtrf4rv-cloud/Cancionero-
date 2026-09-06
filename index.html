@@ -451,6 +451,7 @@
     <button id="btnCuenta" class="account-btn">Iniciar sesión / registrarme</button>
   </div>
   <div class="settings-sep"></div>
+  <div id="syncStatus" class="notif-status" style="display:block">🔄 Comprobando versión…</div>
   <div id="notifStatus" class="notif-status"></div>
   <button id="btnNotificaciones" class="install-btn notif-btn" style="display:none;">🔔 Activar notificaciones</button>
   <button id="btnInstalar" class="install-btn" style="display:none;">⬇ Instalar app</button>
@@ -628,7 +629,22 @@ $btnVolver.addEventListener('click', volverALista);
   function authHeaders(){ return token()?{Authorization:`Bearer ${token()}`}:{ }; }
   function deviceInfo(){ return { userAgent:navigator.userAgent, platform:navigator.userAgentData?.platform || navigator.platform || '', installed:isStandalone() }; }
 
-  if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(console.warn));
+  if ('serviceWorker' in navigator) {
+    let recargaPorSW = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (recargaPorSW || sessionStorage.getItem('sw_recargado') === '1') return;
+      recargaPorSW = true;
+      sessionStorage.setItem('sw_recargado', '1');
+      location.reload();
+    });
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        await reg.update();
+        setTimeout(() => sessionStorage.removeItem('sw_recargado'), 5000);
+      } catch (err) { console.warn('No se pudo actualizar el Service Worker:', err); }
+    });
+  }
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); eventoInstalacion=e; btnInstalar.style.display='block'; });
   btnInstalar.addEventListener('click',async()=>{ if(!eventoInstalacion)return; eventoInstalacion.prompt(); await eventoInstalacion.userChoice; eventoInstalacion=null; btnInstalar.style.display='none'; });
   window.addEventListener('appinstalled',()=>{ btnInstalar.style.display='none'; actualizarNotificaciones(); });
@@ -642,26 +658,113 @@ $btnVolver.addEventListener('click', volverALista);
   formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  async function restoreSession(){ if(!token()){renderCuenta();return;} try{const r=await fetch('/api/me',{headers:authHeaders()}); if(!r.ok)throw 0; currentUser=(await r.json()).user;}catch{localStorage.removeItem('cancionero_token');currentUser=null;} renderCuenta(); }
+  const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
+  const USER_CACHE_KEY='cancionero_user_cache';
+  const syncStatus=$('syncStatus');
+  let ultimaSincronizacion=0;
+  let sincronizando=false;
 
-  async function cargarCancionero(){
-    if(cancioneroLoaded) return;
-    const r=await fetch('/api/cancionero',{headers:authHeaders(),cache:'no-store'});
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(d.error||'No se pudo cargar el cancionero');
-    CANCIONES=Array.isArray(d.canciones)?d.canciones:[];
-    cancioneroLoaded=true;
-    renderLista();
+  function guardarUsuarioOffline(user){
+    try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify({user, savedAt:Date.now()})); } catch {}
   }
+  function leerUsuarioOffline(){
+    try { return JSON.parse(localStorage.getItem(USER_CACHE_KEY)||'null')?.user || null; } catch { return null; }
+  }
+  function guardarCancioneroOffline(data){
+    try {
+      localStorage.setItem(OFFLINE_DATA_KEY, JSON.stringify({
+        version:data.version||'sin-version',
+        canciones:Array.isArray(data.canciones)?data.canciones:[],
+        savedAt:Date.now()
+      }));
+      return true;
+    } catch(err) {
+      console.warn('No se pudo guardar la copia offline:',err);
+      return false;
+    }
+  }
+  function leerCancioneroOffline(){
+    try { return JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY)||'null'); } catch { return null; }
+  }
+  function fechaCorta(ts){
+    if(!ts) return '';
+    try { return new Date(ts).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); } catch { return ''; }
+  }
+  function statusSync(text){ if(syncStatus) syncStatus.textContent=text; }
+
+  async function restoreSession(){
+    if(!token()){renderCuenta();return;}
+    try{
+      const r=await fetch('/api/me',{headers:authHeaders(),cache:'no-store'});
+      if(r.status===401){
+        localStorage.removeItem('cancionero_token');
+        localStorage.removeItem(USER_CACHE_KEY);
+        currentUser=null;
+      } else if(!r.ok) {
+        throw new Error('Servidor no disponible');
+      } else {
+        currentUser=(await r.json()).user;
+        guardarUsuarioOffline(currentUser);
+      }
+    }catch(err){
+      // Sin conexión: conservamos la última sesión autorizada de ESTE dispositivo.
+      const cached=leerUsuarioOffline();
+      currentUser=cached || null;
+      if(currentUser) statusSync('📴 Sin conexión · usando tu última sesión guardada');
+    }
+    renderCuenta();
+  }
+
+  async function cargarCancionero({forzar=false}={}){
+    if(sincronizando) return;
+    if(cancioneroLoaded && !forzar) return;
+    sincronizando=true;
+    try{
+      const r=await fetch('/api/cancionero',{headers:authHeaders(),cache:'no-store'});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok) {
+        if(r.status===401 || r.status===403) throw Object.assign(new Error(d.error||'Acceso no autorizado'),{authError:true});
+        throw new Error(d.error||'No se pudo cargar el cancionero');
+      }
+      const anterior=leerCancioneroOffline();
+      CANCIONES=Array.isArray(d.canciones)?d.canciones:[];
+      cancioneroLoaded=true;
+      guardarCancioneroOffline(d);
+      ultimaSincronizacion=Date.now();
+      renderLista($buscador?.value||'');
+      if(anterior?.version && anterior.version!==d.version) statusSync(`✅ Cancionero actualizado · versión ${d.version}`);
+      else statusSync(`✅ Versión al día · ${fechaCorta(ultimaSincronizacion)}`);
+      return {offline:false,version:d.version};
+    }catch(err){
+      if(err.authError) throw err;
+      const offline=leerCancioneroOffline();
+      if(offline && Array.isArray(offline.canciones) && offline.canciones.length){
+        CANCIONES=offline.canciones;
+        cancioneroLoaded=true;
+        renderLista($buscador?.value||'');
+        statusSync(`📴 Sin conexión · versión guardada del ${fechaCorta(offline.savedAt)}`);
+        return {offline:true,version:offline.version};
+      }
+      throw new Error('No hay conexión y este dispositivo todavía no tiene una versión del cancionero guardada.');
+    }finally{
+      sincronizando=false;
+    }
+  }
+
+  async function buscarActualizacion(){
+    if(!currentUser?.approved || !token() || !navigator.onLine || sincronizando) return;
+    try { await cargarCancionero({forzar:true}); } catch(err) { if(err.authError){ await restoreSession(); await aplicarAcceso(); } }
+  }
+
   async function aplicarAcceso(){
     const gate=$('accessGate'), txt=$('accessText'), state=$('accessState'), retry=$('btnAccessRetry');
     gate.classList.remove('hidden'); retry.style.display='none';
     if(!currentUser){ txt.textContent='Para consultar el cancionero necesitas registrarte, verificar tu correo e iniciar sesión.'; state.textContent='Sin sesión'; $('btnAccessLogin').style.display='block'; return; }
     if(!currentUser.approved){ txt.textContent=`Hola, ${currentUser.mote}. Tu cuenta fue creada correctamente, pero el administrador todavía no te ha dado acceso.`; state.textContent='⏳ Pendiente de autorización'; $('btnAccessLogin').style.display='block'; retry.style.display='block'; return; }
-    try{ state.textContent='Cargando cancionero…'; await cargarCancionero(); gate.classList.add('hidden'); }
+    try{ state.textContent=navigator.onLine?'Comprobando versión más reciente…':'Abriendo última versión guardada…'; await cargarCancionero(); gate.classList.add('hidden'); }
     catch(err){ txt.textContent='No se pudo validar o cargar tu acceso.'; state.textContent='⚠️ '+(err.message||'Error'); retry.style.display='block'; }
   }
   $('btnAccessLogin').onclick=()=>authModal.classList.add('open');
@@ -694,6 +797,23 @@ $btnVolver.addEventListener('click', volverALista);
     }catch(err){console.warn(err);statusNotif(`❌ ${err.message||'No se pudo activar notificaciones.'}`);}
   });
 
+  // Mantener el cancionero actualizado sin estorbar al usuario.
+  window.addEventListener('online', async()=>{
+    statusSync('🔄 Conexión recuperada · buscando actualización…');
+    await restoreSession();
+    await aplicarAcceso();
+    await buscarActualizacion();
+    await actualizarNotificaciones();
+  });
+  window.addEventListener('offline',()=>{
+    const offline=leerCancioneroOffline();
+    statusSync(offline?`📴 Sin conexión · disponible copia del ${fechaCorta(offline.savedAt)}`:'📴 Sin conexión · aún no hay copia guardada');
+  });
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible' && Date.now()-ultimaSincronizacion>60_000) buscarActualizacion();
+  });
+  setInterval(()=>{ if(document.visibilityState==='visible') buscarActualizacion(); },5*60*1000);
+
   const verifyParam=new URLSearchParams(location.search).get('email_verified');
   if(verifyParam){
     authModal.classList.add('open'); setTab(false); authMsg.className=verifyParam==='1'?'auth-msg ok':'auth-msg err';
@@ -701,7 +821,7 @@ $btnVolver.addEventListener('click', volverALista);
     history.replaceState({},'',location.pathname);
   }
   if (!history.state?.view) history.replaceState({view:'list'},'',location.pathname + location.search);
-  (async()=>{await restoreSession();await aplicarAcceso();await actualizarNotificaciones();})();
+  (async()=>{ statusSync(navigator.onLine?'🔄 Comprobando versión…':'📴 Sin conexión · buscando copia guardada…'); await restoreSession();await aplicarAcceso();await actualizarNotificaciones();})();
 </script>
 </body>
 </html>
