@@ -123,18 +123,6 @@
     letter-spacing:.05em;
   }
 
-  .ribbon{
-    height:6px;
-    width:100%;
-    border-radius:3px;
-    background: repeating-linear-gradient(90deg,
-      var(--dorado) 0px, var(--dorado) 18px,
-      var(--marfil) 18px, var(--marfil) 22px,
-      var(--rojo) 22px, var(--rojo) 40px);
-    opacity:.85;
-    margin-bottom:12px;
-  }
-
   .search-wrap{
     position:relative;
   }
@@ -411,8 +399,6 @@
       </div>
     </div>
 
-    <div class="ribbon"></div>
-
     <div class="search-wrap" id="searchArea">
       <input id="buscador" type="text" inputmode="search" autocomplete="off"
              placeholder="Buscar canción por título…">
@@ -629,6 +615,57 @@ $btnVolver.addEventListener('click', volverALista);
   function authHeaders(){ return token()?{Authorization:`Bearer ${token()}`}:{ }; }
   function deviceInfo(){ return { userAgent:navigator.userAgent, platform:navigator.userAgentData?.platform || navigator.platform || '', installed:isStandalone() }; }
 
+  const DAILY_UPDATE_KEY='cancionero_last_daily_update_v1';
+  const UPDATE_MARKER_URL='/__cancionero_update_marker__';
+  function fechaLocalClave(d=new Date()){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function yaSeActualizoHoy(){ return localStorage.getItem(DAILY_UPDATE_KEY)===fechaLocalClave(); }
+  function marcarActualizadoHoy(){ localStorage.setItem(DAILY_UPDATE_KEY,fechaLocalClave()); }
+  function msHastaMedianoche(){ const ahora=new Date(); const prox=new Date(ahora); prox.setHours(24,0,0,0); return Math.max(1000,prox-ahora); }
+
+  async function leerMarcaActualizacion(){
+    try{
+      if(!('caches' in window)) return null;
+      const r=await caches.match(UPDATE_MARKER_URL);
+      if(!r) return null;
+      return await r.json();
+    }catch{return null;}
+  }
+  async function borrarMarcaActualizacion(){
+    try{
+      if(!('caches' in window)) return;
+      const nombres=await caches.keys();
+      await Promise.all(nombres.map(async nombre=>{
+        const c=await caches.open(nombre);
+        await c.delete(UPDATE_MARKER_URL);
+      }));
+    }catch{}
+  }
+  async function actualizarSiHayAvisoPendiente(versionForzada=null){
+    if(!navigator.onLine || !currentUser?.approved || !token()) return false;
+    const offline=leerCancioneroOffline();
+    const marca=await leerMarcaActualizacion();
+    const objetivo=versionForzada || marca?.version || null;
+    if(!objetivo || objetivo===offline?.version) {
+      if(objetivo && objetivo===offline?.version) await borrarMarcaActualizacion();
+      return false;
+    }
+    statusSync('🆕 Hay una actualización nueva · descargando…');
+    try{
+      await buscarActualizacion();
+      const nueva=leerCancioneroOffline();
+      if(nueva?.version===objetivo || (nueva?.version && nueva?.version!==offline?.version)){
+        await borrarMarcaActualizacion();
+        statusSync(`✅ Cancionero actualizado · versión ${nueva.version}`);
+        return true;
+      }
+    }catch(err){
+      console.warn('No se pudo descargar la actualización notificada:',err);
+    }
+    return false;
+  }
+
   if ('serviceWorker' in navigator) {
     let recargaPorSW = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -639,10 +676,9 @@ $btnVolver.addEventListener('click', volverALista);
     });
     window.addEventListener('load', async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-        await reg.update();
+        await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
         setTimeout(() => sessionStorage.removeItem('sw_recargado'), 5000);
-      } catch (err) { console.warn('No se pudo actualizar el Service Worker:', err); }
+      } catch (err) { console.warn('No se pudo registrar el Service Worker:', err); }
     });
   }
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); eventoInstalacion=e; btnInstalar.style.display='block'; });
@@ -797,22 +833,43 @@ $btnVolver.addEventListener('click', volverALista);
     }catch(err){console.warn(err);statusNotif(`❌ ${err.message||'No se pudo activar notificaciones.'}`);}
   });
 
-  // Mantener el cancionero actualizado sin estorbar al usuario.
+  // Actualización automática: como máximo una vez por día.
+  // Si la app está abierta a medianoche, intenta actualizar en ese momento.
+  // Si estaba cerrada, lo hace la primera vez que se abre ese día.
+  async function actualizacionDiaria(){
+    if(yaSeActualizoHoy() || !navigator.onLine) return;
+    if(!currentUser?.approved || !token()) return;
+    statusSync('🔄 Comprobando actualización diaria…');
+    try{
+      if('serviceWorker' in navigator){
+        const reg=await navigator.serviceWorker.getRegistration();
+        if(reg) await reg.update();
+      }
+      await buscarActualizacion();
+      marcarActualizadoHoy();
+    }catch(err){
+      console.warn('No se pudo completar la actualización diaria:',err);
+    }
+  }
+  function programarMedianoche(){
+    setTimeout(async()=>{
+      await actualizacionDiaria();
+      programarMedianoche();
+    },msHastaMedianoche()+1000);
+  }
+  programarMedianoche();
+
   window.addEventListener('online', async()=>{
-    statusSync('🔄 Conexión recuperada · buscando actualización…');
     await restoreSession();
     await aplicarAcceso();
-    await buscarActualizacion();
+    await actualizarSiHayAvisoPendiente();
+    if(!yaSeActualizoHoy()) await actualizacionDiaria();
     await actualizarNotificaciones();
   });
   window.addEventListener('offline',()=>{
     const offline=leerCancioneroOffline();
     statusSync(offline?`📴 Sin conexión · disponible copia del ${fechaCorta(offline.savedAt)}`:'📴 Sin conexión · aún no hay copia guardada');
   });
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible' && Date.now()-ultimaSincronizacion>60_000) buscarActualizacion();
-  });
-  setInterval(()=>{ if(document.visibilityState==='visible') buscarActualizacion(); },5*60*1000);
 
   const verifyParam=new URLSearchParams(location.search).get('email_verified');
   if(verifyParam){
@@ -821,7 +878,19 @@ $btnVolver.addEventListener('click', volverALista);
     history.replaceState({},'',location.pathname);
   }
   if (!history.state?.view) history.replaceState({view:'list'},'',location.pathname + location.search);
-  (async()=>{ statusSync(navigator.onLine?'🔄 Comprobando versión…':'📴 Sin conexión · buscando copia guardada…'); await restoreSession();await aplicarAcceso();await actualizarNotificaciones();})();
+  (async()=>{
+    statusSync(navigator.onLine?(yaSeActualizoHoy()?'✅ Actualización diaria ya realizada':'🔄 Preparando cancionero…'):'📴 Sin conexión · buscando copia guardada…');
+    await restoreSession();
+    await aplicarAcceso();
+    const updateParam=new URLSearchParams(location.search).get('actualizar');
+    const forzada=await actualizarSiHayAvisoPendiente(updateParam);
+    if(updateParam){
+      const u=new URL(location.href); u.searchParams.delete('actualizar');
+      history.replaceState(history.state||{view:'list'},'',u.pathname+u.search);
+    }
+    if(!forzada && !yaSeActualizoHoy()) await actualizacionDiaria();
+    await actualizarNotificaciones();
+  })();
 </script>
 </body>
 </html>

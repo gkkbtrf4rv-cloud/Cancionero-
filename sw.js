@@ -1,4 +1,5 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v10";
+const CACHE_NAME = "cancionero-tuna-derecho-v12";
+const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -18,64 +19,53 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
 
-  // Los datos privados del cancionero se guardan por usuario desde index.html,
-  // no en la caché pública del Service Worker.
+  // Los datos privados del cancionero se guardan por usuario desde index.html.
   if (url.pathname.startsWith('/api/')) return;
 
+  // Para no gastar datos en cada apertura, la app usa primero la copia local.
+  // La comprobación de una versión nueva se hace una sola vez al día desde index.html.
   if (event.request.mode === 'navigate') {
-    event.respondWith(networkFirstPage(event.request));
+    event.respondWith(cacheFirstPage(event.request));
     return;
   }
 
   if (url.origin === self.location.origin) {
-    event.respondWith(staleWhileRevalidate(event.request));
+    event.respondWith(cacheFirst(event.request));
   }
 });
 
-async function stripRedirectFlag(response) {
-  if (!response || !response.redirected) return response;
-  const body = await response.clone().arrayBuffer();
-  return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
-}
-
-async function networkFirstPage(request) {
+async function cacheFirstPage(request) {
+  const cached = (await caches.match(request)) || (await caches.match('/'));
+  if (cached) return cached;
   try {
-    const response = await fetch(request, { cache: 'no-store' });
-    const clean = await stripRedirectFlag(response);
-    if (clean && clean.ok) {
+    const response = await fetch(request);
+    if (response && response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put('/', clean.clone());
-      await cache.put(request, clean.clone());
+      await cache.put('/', response.clone());
+      await cache.put(request, response.clone());
     }
-    return clean;
-  } catch (err) {
-    return (await caches.match(request)) || (await caches.match('/')) ||
-      new Response('Sin conexión y sin una versión guardada todavía.', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      });
+    return response;
+  } catch {
+    return new Response('Sin conexión y sin una versión guardada todavía.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
   }
 }
 
-async function staleWhileRevalidate(request) {
+async function cacheFirst(request) {
   const cached = await caches.match(request);
-  const networkPromise = fetch(request).then(async (response) => {
-    const clean = await stripRedirectFlag(response);
-    if (clean && clean.ok) {
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, clean.clone());
+      await cache.put(request, response.clone());
     }
-    return clean;
-  }).catch(() => null);
-
-  if (cached) {
-    networkPromise.catch(() => {});
-    return cached;
+    return response;
+  } catch {
+    return new Response('Sin conexión.', { status: 503 });
   }
-
-  const network = await networkPromise;
-  if (network) return network;
-  return (await caches.match('/')) || new Response('Sin conexión.', { status: 503 });
 }
 
 self.addEventListener("push", (event) => {
@@ -87,11 +77,28 @@ self.addEventListener("push", (event) => {
     body: data.body || "",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    tag: "cancionero-tuna",
+    tag: data.kind === 'content-update' ? 'cancionero-update' : 'cancionero-tuna',
     renotify: true,
-    data: { url: data.url || "/" }
+    data: { url: data.url || "/", kind: data.kind || null, version: data.version || null }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  event.waitUntil((async () => {
+    // Si el push corresponde a una versión nueva, dejamos una marca LOCAL.
+    // Así la próxima apertura puede forzar la descarga aunque la actualización
+    // diaria ya se hubiera realizado antes de que el administrador publicara cambios.
+    if (data.kind === 'content-update' && data.version) {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(UPDATE_MARKER_URL, new Response(JSON.stringify({
+          version: data.version,
+          receivedAt: new Date().toISOString()
+        }), { headers: { 'Content-Type': 'application/json' } }));
+      } catch (err) {
+        console.warn('No se pudo guardar la marca de actualización:', err);
+      }
+    }
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
