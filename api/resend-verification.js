@@ -23,8 +23,16 @@ export default async function handler(req, res) {
     const verifyUrl = `${appUrl}/api/verify-email?token=${encodeURIComponent(verifyToken)}`;
     const mail = verificationEmail({ mote:user.mote, email:user.email, verifyUrl });
     const sent = await sendEmail({ to:user.email, ...mail });
+    if (!sent.ok) {
+      await kv.del(`verify:${verifyToken}`);
+      return res.status(502).json({
+        error:'No pudimos enviar el correo de verificación.',
+        detail:sent.error || 'El servicio de correo rechazó el mensaje.',
+        emailCode:sent.code || null
+      });
+    }
 
-    return res.status(200).json({ ok:true, sent:sent.ok === true, message:'Si la cuenta existe y está pendiente, enviaremos un correo de verificación.' });
+    return res.status(200).json({ ok:true, sent:true, message:`✅ Correo de verificación enviado a ${user.email}. Revisa también Spam/No deseado.`, emailMessageId:sent.id || null });
   } catch (err) {
     console.error('Error reenviando verificación:', err);
     return res.status(500).json({ error:'No se pudo reenviar la verificación.' });

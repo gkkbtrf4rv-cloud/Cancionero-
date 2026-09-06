@@ -21,12 +21,14 @@ export default async function handler(req, res) {
       await kv.set(`user:${userId}`, user);
 
       let emailSent = false;
+      let emailError = null;
       if (approved && !wasApproved && user.email) {
         const mail = approvedEmail({ mote:user.mote, appUrl:getAppUrl(req) });
         const sent = await sendEmail({ to:user.email, ...mail });
         emailSent = sent.ok === true;
+        emailError = sent.ok ? null : (sent.error || 'No se pudo enviar el correo.');
       }
-      return res.status(200).json({ ok:true, emailSent, user:{ id:user.id, email:user.email || user.username || '', mote:user.mote, approved:user.approved, accessStatus:user.accessStatus } });
+      return res.status(200).json({ ok:true, emailSent, emailError, user:{ id:user.id, email:user.email || user.username || '', mote:user.mote, approved:user.approved, accessStatus:user.accessStatus } });
     }
 
     const ids = await kv.smembers('users:all');

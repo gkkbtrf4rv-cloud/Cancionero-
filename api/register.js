@@ -44,10 +44,23 @@ export default async function handler(req, res) {
     const mail = verificationEmail({ mote, email, verifyUrl });
     const sent = await sendEmail({ to:email, ...mail });
 
+    if (!sent.ok) {
+      // No dejamos una cuenta a medias si el correo de verificación no pudo salir.
+      await kv.del(`verify:${verifyToken}`);
+      await kv.del(`user:${userId}`);
+      await kv.srem('users:all', userId);
+      return res.status(502).json({
+        error:'No se creó la cuenta porque no pudimos enviar el correo de verificación.',
+        detail:sent.error || 'El servicio de correo rechazó el mensaje.',
+        emailCode:sent.code || null
+      });
+    }
+
     return res.status(201).json({
       ok:true,
       user:publicUser(user),
-      verificationEmailSent: sent.ok === true
+      verificationEmailSent:true,
+      emailMessageId:sent.id || null
     });
   } catch (err) {
     console.error('Error registrando usuario:', err);
