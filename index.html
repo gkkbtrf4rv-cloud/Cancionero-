@@ -159,6 +159,21 @@
     letter-spacing:.03em;
   }
 
+  /* La antigua franja decorativa del encabezado queda anulada por completo. */
+  header.top::before,
+  header.top::after,
+  .ornament, .ornamento, .divider, .separador, .header-divider,
+  .decorative-line, .linea-decorativa, .franja, .tricolor-line {
+    content:none !important;
+    display:none !important;
+    background:none !important;
+    border:0 !important;
+    height:0 !important;
+    min-height:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+
   /* ---------- LISTA ---------- */
   main{
     flex:1;
@@ -675,7 +690,10 @@ $btnVolver.addEventListener('click', volverALista);
     });
     window.addEventListener('load', async () => {
       try {
-        await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        // Revisar solo el archivo pequeño del Service Worker en cada apertura.
+        // El contenido privado del cancionero sigue respetando la actualización diaria.
+        reg.update().catch(()=>{});
         setTimeout(() => sessionStorage.removeItem('sw_recargado'), 5000);
       } catch (err) { console.warn('No se pudo registrar el Service Worker:', err); }
     });

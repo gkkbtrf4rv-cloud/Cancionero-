@@ -1,9 +1,19 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v13";
+const CACHE_NAME = "cancionero-tuna-derecho-v14";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // El cache-bust evita reutilizar una copia HTTP antigua del shell.
+    const fresh = await fetch('/?app-shell=v14', { cache: 'no-store' });
+    if (fresh && fresh.ok) await cache.put('/', fresh.clone());
+    await Promise.allSettled([
+      cache.add(new Request('/manifest.json', { cache: 'reload' })),
+      cache.add(new Request('/icon-192.png', { cache: 'reload' })),
+      cache.add(new Request('/icon-512.png', { cache: 'reload' }))
+    ]);
+  })());
   self.skipWaiting();
 });
 
@@ -12,37 +22,32 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
+    // Fuerza a las ventanas abiertas a volver a cargar usando el shell v14.
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    await Promise.allSettled(windows.map((client) => client.navigate(client.url)));
   })());
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
-
-  // Los datos privados del cancionero se guardan por usuario desde index.html.
   if (url.pathname.startsWith('/api/')) return;
 
-  // Para no gastar datos en cada apertura, la app usa primero la copia local.
-  // La comprobación de una versión nueva se hace una sola vez al día desde index.html.
   if (event.request.mode === 'navigate') {
     event.respondWith(cacheFirstPage(event.request));
     return;
   }
-
-  if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(event.request));
-  }
+  if (url.origin === self.location.origin) event.respondWith(cacheFirst(event.request));
 });
 
 async function cacheFirstPage(request) {
-  const cached = (await caches.match(request)) || (await caches.match('/'));
+  const cached = (await caches.match('/')) || (await caches.match(request));
   if (cached) return cached;
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: 'no-store' });
     if (response && response.ok) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put('/', response.clone());
-      await cache.put(request, response.clone());
     }
     return response;
   } catch {
@@ -83,9 +88,6 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil((async () => {
-    // Si el push corresponde a una versión nueva, dejamos una marca LOCAL.
-    // Así la próxima apertura puede forzar la descarga aunque la actualización
-    // diaria ya se hubiera realizado antes de que el administrador publicara cambios.
     if (data.kind === 'content-update' && data.version) {
       try {
         const cache = await caches.open(CACHE_NAME);
