@@ -1,8 +1,7 @@
 import { kv } from '@vercel/kv';
+import { sendEmail, approvedEmail, getAppUrl } from '../lib/email.js';
 
-function adminOk(password) {
-  return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD;
-}
+function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
 
 export default async function handler(req, res) {
   if (!['POST','PATCH'].includes(req.method)) return res.status(405).json({ error: 'Método no permitido' });
@@ -14,11 +13,19 @@ export default async function handler(req, res) {
       const approved = req.body?.approved === true;
       const user = await kv.get(`user:${userId}`);
       if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+      const wasApproved = user.approved === true;
       user.approved = approved;
       user.accessStatus = approved ? 'approved' : 'revoked';
       user.approvedAt = approved ? new Date().toISOString() : null;
       await kv.set(`user:${userId}`, user);
-      return res.status(200).json({ ok: true, user: { id:user.id, username:user.username, mote:user.mote, approved:user.approved, accessStatus:user.accessStatus } });
+
+      let emailSent = false;
+      if (approved && !wasApproved && user.email) {
+        const mail = approvedEmail({ mote:user.mote, appUrl:getAppUrl(req) });
+        const sent = await sendEmail({ to:user.email, ...mail });
+        emailSent = sent.ok === true;
+      }
+      return res.status(200).json({ ok:true, emailSent, user:{ id:user.id, email:user.email || user.username || '', mote:user.mote, approved:user.approved, accessStatus:user.accessStatus } });
     }
 
     const ids = await kv.smembers('users:all');
@@ -28,9 +35,9 @@ export default async function handler(req, res) {
       if (!u) continue;
       const subIds = await kv.smembers(`user:${id}:subs`);
       users.push({
-        id: u.id, username: u.username, mote: u.mote, approved: u.approved === true,
-        accessStatus: u.approved === true ? 'approved' : (u.accessStatus || 'pending'),
-        createdAt: u.createdAt || null, lastLoginAt: u.lastLoginAt || null, devices: subIds.length
+        id:u.id, email:u.email || u.username || '', mote:u.mote, approved:u.approved === true,
+        accessStatus:u.approved === true ? 'approved' : (u.accessStatus || 'pending'),
+        createdAt:u.createdAt || null, lastLoginAt:u.lastLoginAt || null, devices:subIds.length
       });
     }
     users.sort((a,b)=>String(a.mote).localeCompare(String(b.mote),'es'));

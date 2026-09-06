@@ -471,16 +471,16 @@
   <div class="modal-card">
     <button class="modal-close" id="cerrarAuth" aria-label="Cerrar">×</button>
     <h2>Cuenta del Cancionero</h2>
-    <p>Regístrate con tu <strong>mote</strong>. El administrador deberá autorizar tu cuenta antes de que puedas consultar el cancionero.</p>
+    <p>Regístrate con tu <strong>mote, correo electrónico y contraseña</strong>. El administrador deberá autorizar tu cuenta antes de que puedas consultar el cancionero.</p>
     <div class="modal-tabs"><button id="tabLogin" class="active">Entrar</button><button id="tabRegistro">Registrarme</button></div>
     <form id="formLogin" class="auth-form">
-      <label>Usuario<input id="loginUser" autocomplete="username" required maxlength="24"></label>
+      <label>Correo electrónico<input id="loginEmail" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label>
       <label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>
       <button class="auth-submit" type="submit">Entrar</button>
     </form>
     <form id="formRegistro" class="auth-form" style="display:none">
       <label>Mote<input id="regMote" required maxlength="40" placeholder="Ej. Goliath"></label>
-      <label>Usuario<input id="regUser" autocomplete="username" required maxlength="24" placeholder="Ej. goliath"></label>
+      <label>Correo electrónico<input id="regEmail" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label>
       <label>Contraseña<input id="regPass" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo 8 caracteres"></label>
       <button class="auth-submit" type="submit">Crear cuenta</button>
     </form>
@@ -612,10 +612,10 @@ $btnVolver.addEventListener('click', volverALista);
   $('btnCuenta').onclick=()=>{ settingsPanel.classList.remove('open'); authModal.classList.add('open'); $('loggedActions').style.display=currentUser?'block':'none'; formLogin.style.display=currentUser?'none':'grid'; formRegistro.style.display='none'; };
 
   async function authRequest(url,payload){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Ocurrió un error'); return d; }
-  formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{username:$('loginUser').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,username:$('regUser').value,password:$('regPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=`Cuenta creada para ${d.user.mote}. Espera la autorización del administrador.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),700); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
+  formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
+  formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.emails?.confirmation?`Cuenta creada para ${d.user.mote}. Te enviamos un correo de confirmación. Espera la autorización del administrador.`:`Cuenta creada para ${d.user.mote}. Quedó pendiente de autorización, pero no se pudo enviar el correo de confirmación.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),700); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
-  function renderCuenta(){ $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · @${escapeHtml(currentUser.username)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
+  function renderCuenta(){ $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   async function restoreSession(){ if(!token()){renderCuenta();return;} try{const r=await fetch('/api/me',{headers:authHeaders()}); if(!r.ok)throw 0; currentUser=(await r.json()).user;}catch{localStorage.removeItem('cancionero_token');currentUser=null;} renderCuenta(); }
 
