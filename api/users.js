@@ -20,6 +20,7 @@ export default async function handler(req, res) {
       const appUrl = getAppUrl(req);
       const sent = await sendEmail({
         to:config.adminEmail,
+        cc:config.adminCcEmail,
         subject:'Prueba de correo · Cancionero Tuna de Derecho',
         text:`Si recibiste este mensaje, el envío de correos del Cancionero está funcionando. ${appUrl || ''}`,
         html:`<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto"><h2>✅ Correo de prueba</h2><p>El sistema de correo del Cancionero está funcionando y Gmail envió este mensaje.</p><p><strong>Remitente:</strong> ${config.from}</p></div>`
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
       if (!sent.ok) {
         return res.status(502).json({ error:'Gmail rechazó el correo de prueba.', detail:sent.error, emailCode:sent.code, config });
       }
-      return res.status(200).json({ ok:true, message:'Correo de prueba enviado por Gmail.', emailMessageId:sent.id, to:config.adminEmail, from:config.from });
+      return res.status(200).json({ ok:true, message:'Correo de prueba enviado por Gmail.', emailMessageId:sent.id, to:config.adminEmail, cc:config.adminCcEmail, from:config.from, accepted:sent.accepted || [], rejected:sent.rejected || [], envelope:sent.envelope || null, smtpResponse:sent.response || null, hasAdminCcEmail:config.hasAdminCcEmail });
     }
 
     if (req.method === 'PATCH') {

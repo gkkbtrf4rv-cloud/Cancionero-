@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       await kv.set(`user:${userId}`, user);
 
       const mail = adminRequestEmail({ mote:user.mote, email:user.email, appUrl });
-      const sent = await sendEmail({ to:process.env.ADMIN_EMAIL, ...mail });
+      const sent = await sendEmail({ to:process.env.ADMIN_EMAIL, cc:process.env.ADMIN_CC_EMAIL, ...mail });
       if (!sent.ok) console.warn('El correo al administrador no pudo enviarse.', sent);
     }
 
