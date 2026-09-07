@@ -397,10 +397,17 @@
   .auth-form{display:grid;gap:10px}.auth-form label{font-family:var(--font-mono);font-size:11px;color:var(--dorado-suave)}.auth-form input{width:100%;margin-top:4px;padding:11px;border-radius:10px;border:1px solid rgba(201,162,39,.45);background:rgba(255,255,255,.07);color:white;font-size:15px}.auth-submit{border:0;border-radius:22px;padding:11px;background:linear-gradient(135deg,var(--dorado),var(--dorado-suave));color:var(--vino-oscuro);font-weight:800;cursor:pointer}.modal-close{float:right;background:none;border:0;color:var(--marfil);font-size:22px;cursor:pointer}.auth-msg{min-height:18px;font-family:var(--font-mono);font-size:11px}.auth-msg.err{color:#ffaaaa}.auth-msg.ok{color:#a8e6ae}
 
 
+
+  /* Splash de inicio */
+  .splash-screen{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;background:radial-gradient(900px 560px at 50% 25%,#6b0f1a 0%,#4a0d16 52%,#240409 100%);transition:opacity .35s ease,visibility .35s ease}
+  .splash-screen.hide{opacity:0;visibility:hidden;pointer-events:none}.splash-inner{text-align:center;padding:26px}.splash-logo{width:112px;height:112px;border-radius:24px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.35));animation:splashPop .7s ease both}.splash-title{font-family:var(--font-display);font-size:30px;color:var(--dorado-suave);margin:18px 0 4px}.splash-sub{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:var(--marfil);opacity:.9}@keyframes splashPop{from{opacity:0;transform:scale(.82) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  /* Pop-up publicado por administración */
+  .announcement-backdrop{position:fixed;inset:0;z-index:15000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}.announcement-backdrop.open{display:flex}.announcement-card{position:relative;width:min(94vw,520px);max-height:90vh;overflow:auto;border:1.5px solid var(--dorado);border-radius:20px;background:linear-gradient(180deg,#5c0e18,#2a0509);box-shadow:0 24px 70px rgba(0,0,0,.6);padding:12px}.announcement-card img{display:block;width:100%;height:auto;max-height:66vh;object-fit:contain;border-radius:13px;background:#160306}.announcement-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.72);color:#fff;font-size:24px;line-height:1;cursor:pointer}.announcement-copy{padding:13px 7px 5px;text-align:center}.announcement-copy h2{margin:0 0 6px;color:var(--dorado-suave);font-family:var(--font-display)}.announcement-copy p{margin:0;color:var(--marfil);line-height:1.5;white-space:pre-wrap}
   .access-gate{position:fixed;inset:0;z-index:9998;background:radial-gradient(900px 500px at 50% 0%,#6b0f1a 0%,#4a0d16 55%,#240409 100%);display:flex;align-items:center;justify-content:center;padding:22px}.access-gate.hidden{display:none}.access-card{width:min(430px,100%);border:1.5px solid var(--dorado);border-radius:18px;background:rgba(0,0,0,.28);padding:26px 22px;text-align:center;box-shadow:0 22px 60px rgba(0,0,0,.35)}.access-card h2{font-family:var(--font-display);color:var(--dorado-suave);margin:0 0 10px}.access-card p{line-height:1.5;color:var(--marfil);margin:8px 0 16px}.access-state{font-family:var(--font-mono);font-size:12px;color:var(--dorado-suave);margin:12px 0}.access-actions{display:grid;gap:10px}.access-actions button{border:0;border-radius:22px;padding:12px;background:linear-gradient(135deg,var(--dorado),var(--dorado-suave));color:var(--vino-oscuro);font-weight:800;cursor:pointer}.access-actions .secondary{background:rgba(255,255,255,.08);color:var(--marfil);border:1px solid rgba(228,200,116,.4)}
 </style>
 </head>
 <body>
+<div id="splashScreen" class="splash-screen"><div class="splash-inner"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"><div class="splash-title">Cancionero digital</div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
 <div class="app">
   <header class="top">
@@ -470,6 +477,8 @@
   </div>
 </div>
 
+
+<div class="announcement-backdrop" id="announcementPopup" role="dialog" aria-modal="true" aria-labelledby="announcementTitle"><div class="announcement-card"><button class="announcement-close" id="announcementClose" aria-label="Cerrar">×</button><img id="announcementImage" alt="Aviso de la Tuna"><div class="announcement-copy" id="announcementCopy"><h2 id="announcementTitle"></h2><p id="announcementBody"></p></div></div></div>
 <div class="modal-backdrop" id="authModal">
   <div class="modal-card">
     <button class="modal-close" id="cerrarAuth" aria-label="Cerrar">×</button>
@@ -495,7 +504,10 @@
 
 
 <script>
+// Splash: aparece al abrir la app, pero no en cada recarga de la misma sesión.
+(()=>{const splash=document.getElementById('splashScreen');if(!splash)return;if(sessionStorage.getItem('cancionero_splash_seen')){splash.remove();return;}sessionStorage.setItem('cancionero_splash_seen','1');setTimeout(()=>{splash.classList.add('hide');setTimeout(()=>splash.remove(),420)},1350);})();
 let CANCIONES = [];
+let POPUP_ACTUAL = null;
 
 const $lista        = document.getElementById('lista-canciones');
 const $buscador      = document.getElementById('buscador');
@@ -771,6 +783,21 @@ $btnVolver.addEventListener('click', volverALista);
     renderCuenta();
   }
 
+
+  function mostrarPopupSiNuevo(popup){
+    POPUP_ACTUAL=popup||null;
+    if(!popup?.id || !popup?.imageData) return;
+    const seen=localStorage.getItem('cancionero_popup_seen');
+    if(seen===popup.id) return;
+    const modal=$('announcementPopup'), img=$('announcementImage'), title=$('announcementTitle'), body=$('announcementBody'), copy=$('announcementCopy');
+    img.src=popup.imageData;title.textContent=popup.title||'';body.textContent=popup.body||'';
+    copy.style.display=(popup.title||popup.body)?'block':'none';
+    modal.classList.add('open');
+  }
+  function cerrarPopup(){const modal=$('announcementPopup');modal.classList.remove('open');if(POPUP_ACTUAL?.id)localStorage.setItem('cancionero_popup_seen',POPUP_ACTUAL.id);}
+  $('announcementClose').onclick=cerrarPopup;
+  $('announcementPopup').addEventListener('click',e=>{if(e.target===$('announcementPopup'))cerrarPopup();});
+
   async function cargarCancionero({forzar=false}={}){
     if(sincronizando) return;
     if(cancioneroLoaded && !forzar) return;
@@ -788,6 +815,7 @@ $btnVolver.addEventListener('click', volverALista);
       guardarCancioneroOffline(d);
       ultimaSincronizacion=Date.now();
       renderLista($buscador?.value||'');
+      mostrarPopupSiNuevo(d.popup);
       if(anterior?.version && anterior.version!==d.version) statusSync(`✅ Cancionero actualizado · versión ${d.version}`);
       else statusSync(`✅ Versión al día · ${fechaCorta(ultimaSincronizacion)}`);
       return {offline:false,version:d.version};
@@ -798,6 +826,7 @@ $btnVolver.addEventListener('click', volverALista);
         CANCIONES=offline.canciones;
         cancioneroLoaded=true;
         renderLista($buscador?.value||'');
+        mostrarPopupSiNuevo(offline.popup);
         statusSync(`📴 Sin conexión · versión guardada del ${fechaCorta(offline.savedAt)}`);
         return {offline:true,version:offline.version};
       }
