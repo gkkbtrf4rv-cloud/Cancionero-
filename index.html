@@ -787,14 +787,14 @@ $btnVolver.addEventListener('click', volverALista);
   function mostrarPopupSiNuevo(popup){
     POPUP_ACTUAL=popup||null;
     if(!popup?.id || !popup?.imageData) return;
-    const seen=localStorage.getItem('cancionero_popup_seen');
+    const seen=sessionStorage.getItem('cancionero_popup_seen');
     if(seen===popup.id) return;
     const modal=$('announcementPopup'), img=$('announcementImage'), title=$('announcementTitle'), body=$('announcementBody'), copy=$('announcementCopy');
     img.src=popup.imageData;title.textContent=popup.title||'';body.textContent=popup.body||'';
     copy.style.display=(popup.title||popup.body)?'block':'none';
     modal.classList.add('open');
   }
-  function cerrarPopup(){const modal=$('announcementPopup');modal.classList.remove('open');if(POPUP_ACTUAL?.id)localStorage.setItem('cancionero_popup_seen',POPUP_ACTUAL.id);}
+  function cerrarPopup(){const modal=$('announcementPopup');modal.classList.remove('open');if(POPUP_ACTUAL?.id)sessionStorage.setItem('cancionero_popup_seen',POPUP_ACTUAL.id);}
   $('announcementClose').onclick=cerrarPopup;
   $('announcementPopup').addEventListener('click',e=>{if(e.target===$('announcementPopup'))cerrarPopup();});
 
