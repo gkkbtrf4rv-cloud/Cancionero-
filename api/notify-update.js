@@ -1,10 +1,9 @@
 import crypto from 'crypto';
 import webpush from 'web-push';
 import { kv } from '@vercel/kv';
-import { CANCIONES } from '../lib/canciones.js';
+import { getAllSongs } from '../lib/song-store.js';
 
 const LAST_NOTIFIED_KEY = 'cancionero:lastNotifiedVersion';
-const CUSTOM_SONGS_KEY = 'app:custom-songs';
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT || 'mailto:tuna.derecho.acatlan@example.com',
@@ -13,8 +12,7 @@ webpush.setVapidDetails(
 );
 
 async function contentVersion() {
-  const custom = await kv.get(CUSTOM_SONGS_KEY);
-  const songs = [...CANCIONES, ...(Array.isArray(custom) ? custom : [])].sort((a,b)=>String(a.titulo).localeCompare(String(b.titulo),'es'));
+  const songs = await getAllSongs();
   return crypto.createHash('sha256').update(JSON.stringify(songs)).digest('hex').slice(0, 16);
 }
 

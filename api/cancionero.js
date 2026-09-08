@@ -1,18 +1,20 @@
 import crypto from 'crypto';
 import { getSessionUser } from '../lib/auth.js';
-import { CANCIONES } from '../lib/canciones.js';
 import { kv } from '@vercel/kv';
-
-const CUSTOM_SONGS_KEY = 'app:custom-songs';
+import { getAllSongs, saveAllSongs } from '../lib/song-store.js';
 
 function adminOk(password) {
   return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD;
 }
 
+function keepSpacing(value='', max=500) {
+  return String(value ?? '').replace(/\r/g,'').slice(0,max);
+}
+
 function cleanLine(line = {}) {
   return {
-    acordes: String(line.acordes || '').trim().slice(0, 180),
-    texto: String(line.texto || '').trim().slice(0, 500)
+    acordes: keepSpacing(line.acordes, 180),
+    texto: keepSpacing(line.texto, 500)
   };
 }
 
@@ -20,14 +22,17 @@ function cleanSong(song = {}, id = '') {
   const titulo = String(song.titulo || '').trim().slice(0, 120);
   const musica = String(song.musica || '').trim().slice(0, 800);
   const estrofas = Array.isArray(song.estrofas)
-    ? song.estrofas.slice(0, 80).map(st => Array.isArray(st) ? st.slice(0, 40).map(cleanLine).filter(x => x.acordes || x.texto) : []).filter(st => st.length)
+    ? song.estrofas.slice(0, 80).map(st => Array.isArray(st)
+      ? st.slice(0, 40).map(cleanLine).filter(x => x.acordes.trim() || x.texto.trim())
+      : []).filter(st => st.length)
     : [];
-  return { id: id || String(song.id || `custom-${Date.now()}`), titulo, musica, estrofas, custom: true };
-}
-
-async function getCustomSongs() {
-  const value = await kv.get(CUSTOM_SONGS_KEY);
-  return Array.isArray(value) ? value : [];
+  return {
+    id: id || String(song.id || `admin-${Date.now()}`),
+    titulo,
+    musica,
+    estrofas,
+    origin: String(song.origin || 'admin') === 'original' ? 'original' : 'admin'
+  };
 }
 
 function mergedVersion(songs) {
@@ -62,30 +67,30 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true, popup: popup || null });
       }
 
-      if (action === 'list-custom-songs') {
-        const songs = await getCustomSongs();
-        return res.status(200).json({ ok: true, songs });
+      if (action === 'list-songs' || action === 'list-custom-songs') {
+        const songs = await getAllSongs();
+        return res.status(200).json({ ok: true, songs, total:songs.length });
       }
 
-      if (action === 'save-custom-song') {
-        const songs = await getCustomSongs();
+      if (action === 'save-song' || action === 'save-custom-song') {
+        const songs = await getAllSongs();
         const incomingId = String(req.body?.song?.id || '').trim();
-        const song = cleanSong(req.body?.song || {}, incomingId || `custom-${Date.now()}`);
+        const existing = incomingId ? songs.find(s => s.id === incomingId) : null;
+        const song = cleanSong({ ...req.body?.song, origin: existing?.origin || 'admin' }, incomingId || `admin-${Date.now()}`);
         if (!song.titulo) return res.status(400).json({ error: 'Escribe el título de la canción.' });
         if (!song.estrofas.length) return res.status(400).json({ error: 'Agrega al menos una línea de letra o acordes.' });
         const idx = songs.findIndex(s => s.id === song.id);
         if (idx >= 0) songs[idx] = song; else songs.push(song);
-        songs.sort((a,b)=>String(a.titulo).localeCompare(String(b.titulo),'es'));
-        await kv.set(CUSTOM_SONGS_KEY, songs);
-        return res.status(200).json({ ok: true, song, total: songs.length });
+        const saved = await saveAllSongs(songs);
+        return res.status(200).json({ ok: true, song, total: saved.length });
       }
 
-      if (action === 'delete-custom-song') {
+      if (action === 'delete-song' || action === 'delete-custom-song') {
         const id = String(req.body?.id || '').trim();
-        const songs = await getCustomSongs();
+        const songs = await getAllSongs();
         const next = songs.filter(s => s.id !== id);
         if (next.length === songs.length) return res.status(404).json({ error: 'Canción no encontrada.' });
-        await kv.set(CUSTOM_SONGS_KEY, next);
+        await saveAllSongs(next);
         return res.status(200).json({ ok: true, total: next.length });
       }
 
@@ -97,8 +102,7 @@ export default async function handler(req, res) {
     if (!session) return res.status(401).json({ error: 'Inicia sesión para consultar el cancionero.' });
     if (session.user.approved !== true) return res.status(403).json({ error: 'Tu cuenta está pendiente de autorización.' });
 
-    const [popup, customSongs] = await Promise.all([kv.get('app:popup'), getCustomSongs()]);
-    const canciones = [...CANCIONES, ...customSongs].sort((a,b)=>String(a.titulo).localeCompare(String(b.titulo),'es'));
+    const [popup, canciones] = await Promise.all([kv.get('app:popup'), getAllSongs()]);
     const version = mergedVersion(canciones);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ ok: true, version, canciones, popup: popup?.active ? popup : null });
