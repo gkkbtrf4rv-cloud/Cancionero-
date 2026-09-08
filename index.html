@@ -404,6 +404,34 @@
   /* Pop-up publicado por administración */
   .announcement-backdrop{position:fixed;inset:0;z-index:15000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}.announcement-backdrop.open{display:flex}.announcement-card{position:relative;width:min(94vw,520px);max-height:90vh;overflow:auto;border:1.5px solid var(--dorado);border-radius:20px;background:linear-gradient(180deg,#5c0e18,#2a0509);box-shadow:0 24px 70px rgba(0,0,0,.6);padding:12px}.announcement-card img{display:block;width:100%;height:auto;max-height:66vh;object-fit:contain;border-radius:13px;background:#160306}.announcement-close{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.72);color:#fff;font-size:24px;line-height:1;cursor:pointer}.announcement-copy{padding:13px 7px 5px;text-align:center}.announcement-copy h2{margin:0 0 6px;color:var(--dorado-suave);font-family:var(--font-display)}.announcement-copy p{margin:0;color:var(--marfil);line-height:1.5;white-space:pre-wrap}
   .access-gate{position:fixed;inset:0;z-index:9998;background:radial-gradient(900px 500px at 50% 0%,#6b0f1a 0%,#4a0d16 55%,#240409 100%);display:flex;align-items:center;justify-content:center;padding:22px}.access-gate.hidden{display:none}.access-card{width:min(430px,100%);border:1.5px solid var(--dorado);border-radius:18px;background:rgba(0,0,0,.28);padding:26px 22px;text-align:center;box-shadow:0 22px 60px rgba(0,0,0,.35)}.access-card h2{font-family:var(--font-display);color:var(--dorado-suave);margin:0 0 10px}.access-card p{line-height:1.5;color:var(--marfil);margin:8px 0 16px}.access-state{font-family:var(--font-mono);font-size:12px;color:var(--dorado-suave);margin:12px 0}.access-actions{display:grid;gap:10px}.access-actions button{border:0;border-radius:22px;padding:12px;background:linear-gradient(135deg,var(--dorado),var(--dorado-suave));color:var(--vino-oscuro);font-weight:800;cursor:pointer}.access-actions .secondary{background:rgba(255,255,255,.08);color:var(--marfil);border:1px solid rgba(228,200,116,.4)}
+
+
+  /* ---------- TEMAS ---------- */
+  body.theme-dark{
+    --vino-oscuro:#12090b; --vino:#1d1114; --rojo:#2c171b; --rojo-brillo:#382126;
+    --dorado:#d0aa3b; --dorado-suave:#ead88f; --marfil:#f7f2e7; --negro-vino:#090607; --sombra:rgba(0,0,0,.55);
+    background:radial-gradient(1000px 520px at 50% -10%, #382126 0%, #1d1114 48%, #090607 100%);
+  }
+  body.theme-light{
+    --vino-oscuro:#f5eee7; --vino:#fffaf3; --rojo:#efe2d8; --rojo-brillo:#ead7c9;
+    --dorado:#8a6418; --dorado-suave:#9a7425; --marfil:#2f171b; --negro-vino:#fffdf9; --sombra:rgba(80,45,35,.15);
+    background:radial-gradient(1000px 520px at 50% -10%, #fffdf9 0%, #f7efe7 58%, #eaded5 100%);
+    color:#2f171b;
+  }
+  body.theme-light header.top{background:linear-gradient(180deg,#fffaf3 0%,#f3e8df 100%);border-bottom:1px solid rgba(138,100,24,.25)}
+  body.theme-light .song-card, body.theme-light .letra-box, body.theme-light .settings-panel,
+  body.theme-light .modal-card, body.theme-light .access-card{background:rgba(255,255,255,.76);color:#2f171b}
+  body.theme-light .song-card .info h3, body.theme-light .titles h1, body.theme-light .song-header h2,
+  body.theme-light .letra-line .texto, body.theme-light .settings-title, body.theme-light .account-bar{color:#2f171b}
+  body.theme-light .search-wrap input, body.theme-light .auth-form input, body.theme-light .theme-select{
+    background:rgba(255,255,255,.82);color:#2f171b;
+  }
+  body.theme-light .search-wrap input::placeholder{color:rgba(47,23,27,.5)}
+  body.theme-light footer.tab{background:rgba(255,250,243,.92);color:#6f5015}
+  .theme-control{display:grid;gap:7px;margin:4px 0 10px}
+  .theme-control label{font-family:var(--font-mono);font-size:11px;color:var(--dorado-suave);letter-spacing:.04em}
+  .theme-select{width:100%;border:1px solid rgba(201,162,39,.45);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,.06);color:var(--marfil);font:600 13px var(--font-titulo);outline:none}
+
 </style>
 </head>
 <body>
@@ -458,6 +486,7 @@
     <button id="btnCuenta" class="account-btn">Iniciar sesión / registrarme</button>
   </div>
   <div class="settings-sep"></div>
+  <div class="theme-control"><label for="themeSelect">🎨 Apariencia</label><select id="themeSelect" class="theme-select"><option value="default">Predeterminado · vino</option><option value="dark">Modo oscuro</option><option value="light">Modo claro</option></select></div>
   <div id="syncStatus" class="notif-status" style="display:block">🔄 Comprobando versión…</div>
   <div id="notifStatus" class="notif-status"></div>
   <button id="btnNotificaciones" class="install-btn notif-btn" style="display:none;">🔔 Activar notificaciones</button>
@@ -504,6 +533,25 @@
 
 
 <script>
+
+// Apariencia: preferencia local por dispositivo.
+(()=>{
+  const key='cancionero_theme_v1';
+  const select=document.getElementById('themeSelect');
+  const meta=document.querySelector('meta[name="theme-color"]');
+  function applyTheme(value){
+    document.body.classList.remove('theme-dark','theme-light');
+    if(value==='dark')document.body.classList.add('theme-dark');
+    if(value==='light')document.body.classList.add('theme-light');
+    if(meta)meta.setAttribute('content',value==='dark'?'#12090b':value==='light'?'#f5eee7':'#5c0e18');
+    try{localStorage.setItem(key,value)}catch{}
+    if(select)select.value=value;
+  }
+  let saved='default';try{saved=localStorage.getItem(key)||'default'}catch{}
+  applyTheme(['default','dark','light'].includes(saved)?saved:'default');
+  select?.addEventListener('change',()=>applyTheme(select.value));
+})();
+
 // Splash: aparece al abrir la app, pero no en cada recarga de la misma sesión.
 (()=>{const splash=document.getElementById('splashScreen');if(!splash)return;if(sessionStorage.getItem('cancionero_splash_seen')){splash.remove();return;}sessionStorage.setItem('cancionero_splash_seen','1');setTimeout(()=>{splash.classList.add('hide');setTimeout(()=>splash.remove(),420)},1350);})();
 let CANCIONES = [];
