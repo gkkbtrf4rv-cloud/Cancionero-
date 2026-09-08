@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import webpush from 'web-push';
 import { kv } from '@vercel/kv';
 import { getAllSongs } from '../lib/song-store.js';
+import { getEventSummaries } from '../lib/event-store.js';
 
 const LAST_NOTIFIED_KEY = 'cancionero:lastNotifiedVersion';
 
@@ -12,8 +13,9 @@ webpush.setVapidDetails(
 );
 
 async function contentVersion() {
-  const songs = await getAllSongs();
-  return crypto.createHash('sha256').update(JSON.stringify(songs)).digest('hex').slice(0, 16);
+  const [songs, events] = await Promise.all([getAllSongs(), getEventSummaries()]);
+  const cleanEvents = events.map(({commentCount, photoCount, ...e}) => e);
+  return crypto.createHash('sha256').update(JSON.stringify({songs, events: cleanEvents})).digest('hex').slice(0, 16);
 }
 
 export default async function handler(req, res) {
