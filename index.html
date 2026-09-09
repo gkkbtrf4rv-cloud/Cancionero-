@@ -534,6 +534,8 @@ footer.tab{display:none!important}.settings-fab{bottom:82px!important}
 body.detail-open .premium-bottom-nav{display:none}
 @media(max-width:420px){.premium-welcome h2{font-size:27px}.featured-event,.featured-event-content{min-height:365px}.featured-title{font-size:31px}.event-hero{min-height:390px}.event-hero h2{font-size:33px}}
 
+  .songs-tools{display:none;margin:0 0 14px}.songs-tools.open{display:block}.premium-shortcuts{grid-template-columns:repeat(3,1fr)}
+  .event-setlist{display:grid;gap:8px}.event-setlist-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:11px;border:1px solid rgba(228,200,116,.16);background:rgba(255,255,255,.045);cursor:pointer}.event-setlist-item .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(201,162,39,.16);color:var(--dorado);font:800 11px var(--font-mono)}.event-setlist-item strong{flex:1;color:var(--marfil);font-size:14px}.event-setlist-item small{display:block;color:var(--dorado-suave);font:10px var(--font-mono);margin-top:2px}.event-setlist-item .go{color:var(--dorado);font-size:18px}
 </style>
 </head>
 <body>
@@ -550,12 +552,6 @@ body.detail-open .premium-bottom-nav{display:none}
       </div>
     </div>
 
-    <div class="search-wrap" id="searchArea">
-      <input id="buscador" type="text" inputmode="search" autocomplete="off"
-             placeholder="Buscar canción por título…">
-      <span class="icon">🔍</span>
-    </div>
-    <div class="count-line" id="contador">— canciones</div>
   </header>
 
   <main>
@@ -569,10 +565,16 @@ body.detail-open .premium-bottom-nav{display:none}
         <button class="premium-shortcut primary" type="button" data-premium-nav="songs"><span class="shortcut-icon">♫</span><strong>Repertorio</strong><small>Todas las canciones</small></button>
         <button class="premium-shortcut" type="button" data-premium-nav="events"><span class="shortcut-icon">▣</span><strong>Eventos</strong><small>Viajes y presentaciones</small></button>
         <button class="premium-shortcut" type="button" data-premium-nav="past"><span class="shortcut-icon">◷</span><strong>Recuerdos</strong><small>Eventos y álbumes pasados</small></button>
-        <button class="premium-shortcut" type="button" data-premium-nav="settings"><span class="shortcut-icon">⚙</span><strong>Mi cuenta</strong><small>Apariencia y acceso</small></button>
       </div>
       <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
       <div class="premium-section-title" id="songsAnchor"><h2>Canciones</h2><span id="premiumSongCount">Repertorio</span></div>
+      <div class="songs-tools" id="songsTools">
+        <div class="search-wrap" id="searchArea">
+          <input id="buscador" type="text" inputmode="search" autocomplete="off" placeholder="Buscar canción por título…">
+          <span class="icon">🔍</span>
+        </div>
+        <div class="count-line" id="contador">— canciones</div>
+      </div>
       <div class="grid" id="lista-canciones"></div>
       <div class="empty-state" id="estado-vacio" style="display:none;">
         No encontramos ninguna canción con ese título.<br>Prueba con otra palabra.
@@ -613,7 +615,8 @@ body.detail-open .premium-bottom-nav{display:none}
       <div class="event-detail-topbar"><button class="event-detail-back" id="btn-volver-evento" aria-label="Volver">‹</button><span class="event-detail-kicker">Tuna de Derecho · Evento</span><span></span></div>
       <div class="offline-event-note" id="offlineEventNote">📴 Viendo la información guardada de este evento. Comentarios y álbum se actualizarán cuando tengas conexión.</div>
       <div class="event-hero"><div class="event-hero-inner"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div></div>
-      <div class="event-info-grid"><div class="event-info-tile"><span>◉</span><strong>Información</strong><small>Fecha, lugar y detalles del evento</small></div><div class="event-info-tile"><span>♬</span><strong>Comunidad</strong><small>Comentarios y álbum grupal</small></div></div>
+      <div class="event-info-grid"><div class="event-info-tile"><span>◉</span><strong>Información</strong><small>Fecha, lugar y detalles del evento</small></div><div class="event-info-tile"><span>♬</span><strong>Repertorio</strong><small>Setlist preparado para este evento</small></div></div>
+      <div class="event-panel" id="eventSetlistPanel" style="display:none"><h3>🎶 Setlist del evento</h3><div class="event-setlist" id="eventSetlist"></div></div>
       <div class="event-panel" id="commentsPanel"><h3>💬 Comentarios</h3><div class="comment-list" id="eventCommentsList"></div><div class="event-comment-form" id="eventCommentForm"><textarea id="eventCommentText" maxlength="600" rows="3" placeholder="Escribe algo sobre este evento…"></textarea><button class="event-action" id="btnEventComment">Publicar comentario</button></div><div class="event-status" id="eventCommentStatus"></div></div>
       <div class="event-panel" id="photosPanel"><h3>📸 Álbum grupal</h3><div class="photo-limit" id="eventPhotoLimit"></div><div class="event-photo-tools" id="eventPhotoTools"><input id="eventPhotoFile" type="file" accept="image/*"><input id="eventPhotoCaption" type="text" maxlength="160" placeholder="Pie de foto (opcional)"><button class="event-action" id="btnEventPhoto">Subir foto</button></div><div class="event-status" id="eventPhotoStatus"></div><div class="event-gallery" id="eventGallery"></div><button class="event-action secondary" id="btnMoreEventPhotos" style="display:none;margin-top:10px">Ver más fotos</button></div>
     </section>
@@ -629,7 +632,6 @@ body.detail-open .premium-bottom-nav{display:none}
 
 </div>
 
-<button id="btnSettings" class="settings-fab" aria-label="Cuenta y configuración" title="Cuenta y configuración">⚙️</button>
 <div id="settingsPanel" class="settings-panel" aria-label="Cuenta y configuración">
   <div class="settings-title">Cuenta y configuración</div>
   <div class="account-bar" id="accountBar">
@@ -730,6 +732,8 @@ const $songViewLabel = document.getElementById('songViewLabel');
 const $songSizeLabel = document.getElementById('songSizeLabel');
 const $songTextMinus = document.getElementById('songTextMinus');
 const $songTextPlus  = document.getElementById('songTextPlus');
+const $eventSetlistPanel = document.getElementById('eventSetlistPanel');
+const $eventSetlist = document.getElementById('eventSetlist');
 let songDetailMode = 'lyrics';
 let songTextSize = Math.max(14, Math.min(24, Number(localStorage.getItem('cancionero_song_text_size_v1')) || 17));
 
@@ -922,7 +926,10 @@ $buscador.addEventListener('input', e => renderLista(e.target.value));
 $btnVolver.addEventListener('click', volverALista);
 
 function premiumNavigate(target){
-  if(target==='settings'){ document.getElementById('settingsPanel')?.classList.add('open'); return; }
+  const tools=document.getElementById('songsTools');
+  if(target==='settings'){ document.getElementById('settingsPanel')?.classList.add('open'); document.querySelectorAll('.premium-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.premiumNav==='settings')); return; }
+  document.getElementById('settingsPanel')?.classList.remove('open');
+  if(tools) tools.classList.toggle('open',target==='songs');
   const map={home:'inicioPremium',songs:'songsAnchor',events:'eventsZone',past:'pastEventsZone'};
   const el=document.getElementById(map[target]||'inicioPremium');
   if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -940,8 +947,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const token = () => localStorage.getItem('cancionero_token');
-  const btnSettings = $('btnSettings'), settingsPanel = $('settingsPanel');
-  btnSettings.addEventListener('click',(e)=>{ e.stopPropagation(); settingsPanel.classList.toggle('open'); });
+  const settingsPanel = $('settingsPanel');
   settingsPanel.addEventListener('click',e=>e.stopPropagation());
   document.addEventListener('click',()=>settingsPanel.classList.remove('open'));
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') settingsPanel.classList.remove('open'); });
@@ -991,7 +997,21 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   function renderCountdown(){if(!EVENTO_ACTUAL?.countdown||eventHasPassed(EVENTO_ACTUAL)){ $('eventCountdownBox').style.display='none'; return; }const target=new Date(EVENTO_ACTUAL.date).getTime(),diff=target-Date.now();if(!Number.isFinite(diff)||diff<=0){$('eventCountdownBox').style.display='none';return;}$('eventCountdownBox').style.display='grid';const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),sec=Math.floor(diff%60000/1000);$('cdDays').textContent=d;$('cdHours').textContent=h;$('cdMinutes').textContent=m;$('cdSeconds').textContent=sec;}
   function renderEventComments(comments=[]){const box=$('eventCommentsList');box.innerHTML='';if(!comments.length){box.innerHTML='<div class="gallery-empty">Todavía no hay comentarios. Puedes ser el primero.</div>';return;}comments.forEach(c=>{const item=document.createElement('div');item.className='comment-item';const name=document.createElement('strong');name.textContent=c.mote||'Integrante';const time=document.createElement('small');try{time.textContent=new Date(c.createdAt).toLocaleString('es-MX');}catch{time.textContent='';}const p=document.createElement('p');p.textContent=c.text||'';item.append(name,time,p);box.appendChild(item);});box.scrollTop=box.scrollHeight;}
   async function cargarFotosEvento(reset=false){if(!EVENTO_ACTUAL)return;if(reset){EVENT_PHOTO_OFFSET=0;EVENT_PHOTO_NEXT=null;$('eventGallery').innerHTML='';}const d=await eventPost({action:'event-photos',eventId:EVENTO_ACTUAL.id,offset:EVENT_PHOTO_OFFSET});if(reset && !d.items?.length)$('eventGallery').innerHTML='<div class="gallery-empty">Todavía no hay fotos. Sube la primera del álbum.</div>';if(d.items?.length && $('eventGallery').querySelector('.gallery-empty'))$('eventGallery').innerHTML='';for(const photo of d.items||[]){const wrap=document.createElement('div');wrap.className='gallery-item';const img=document.createElement('img');img.loading='lazy';const photoSrc=photo.imageUrl||photo.imageData||'';if(photo.imageUrl)setPrivateImg(img,photo.imageUrl);else img.src=photoSrc;img.alt=photo.caption||`Foto de ${photo.mote||'integrante'}`;const mote=document.createElement('div');mote.className='photo-mote';mote.textContent=photo.mote||'Integrante';wrap.append(img,mote);wrap.onclick=async()=>{ const viewer=$('photoViewerImg'); if(photo.imageUrl) await setPrivateImg(viewer,photo.imageUrl); else viewer.src=photo.imageData||'';$('photoViewerCaption').textContent=`${photo.mote||'Integrante'}${photo.caption?' · '+photo.caption:''}`;$('photoViewer').classList.add('open');};$('eventGallery').appendChild(wrap);}EVENT_PHOTO_NEXT=d.nextOffset;$('btnMoreEventPhotos').style.display=EVENT_PHOTO_NEXT===null?'none':'inline-block';if(EVENT_PHOTO_NEXT!==null)EVENT_PHOTO_OFFSET=EVENT_PHOTO_NEXT;}
-  window.abrirEvento=async function(eventId,{pushHistory=true}={}){
+  function renderEventSetlist(evento){
+  const ids=Array.isArray(evento?.setlist)?evento.setlist:[];
+  const songs=ids.map(id=>CANCIONES.find(s=>s.id===id)).filter(Boolean);
+  if(!$eventSetlistPanel||!$eventSetlist)return;
+  $eventSetlistPanel.style.display=songs.length?'block':'none';
+  $eventSetlist.innerHTML='';
+  songs.forEach((song,i)=>{
+    const row=document.createElement('div');row.className='event-setlist-item';
+    row.innerHTML=`<div class="num">${i+1}</div><div><strong>${escapeHtml(song.titulo)}</strong><small>${escapeHtml(song.musica||'Canción del repertorio')}</small></div><div class="go">›</div>`;
+    row.onclick=()=>mostrarDetalle(song);
+    $eventSetlist.appendChild(row);
+  });
+}
+
+window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     let d=null,offlineMode=false;
     try{
       if(navigator.onLine){
