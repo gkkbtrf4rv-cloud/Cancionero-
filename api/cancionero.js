@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs } from '../lib/song-store.js';
-import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData } from '../lib/event-store.js';
+import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover } from '../lib/event-store.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
 function keepSpacing(value='', max=500) { return String(value ?? '').replace(/\r/g,'').slice(0,max); }
@@ -48,11 +48,20 @@ export default async function handler(req, res) {
         if(action==='delete-song'||action==='delete-custom-song'){const id=String(req.body?.id||'').trim(),songs=await getAllSongs(),next=songs.filter(s=>s.id!==id);if(next.length===songs.length)return res.status(404).json({error:'Canción no encontrada.'});await saveAllSongs(next);return res.status(200).json({ok:true,total:next.length});}
         if(action==='list-events-admin'){const events=await getEventSummaries({includeHidden:true});return res.status(200).json({ok:true,events});}
         if(action==='save-event'){
-          const events=await getEvents();const incomingId=safeText(req.body?.event?.id,90);const existing=incomingId?events.find(e=>e.id===incomingId):null;const event=cleanEvent(req.body?.event||{},existing);
+          const events=await getEvents();const incomingId=safeText(req.body?.event?.id,90);const existing=incomingId?events.find(e=>e.id===incomingId):null;let event=cleanEvent(req.body?.event||{},existing);
           if(!event.title)return res.status(400).json({error:'Escribe el nombre del evento.'}); if(!event.date)return res.status(400).json({error:'Selecciona fecha y hora.'});
+          const coverImageData=String(req.body?.event?.coverImageData||'');
+          if(coverImageData){
+            if(!coverImageData.startsWith('data:image/jpeg'))return res.status(400).json({error:'La portada debe enviarse como JPEG.'});
+            if(coverImageData.length>1050000)return res.status(413).json({error:'La portada sigue siendo demasiado pesada.'});
+            const cover=await saveEventCover(event.id,coverImageData,existing?.coverPathname||'');
+            event={...event,coverPathname:cover.pathname,coverUpdatedAt:cover.updatedAt};
+          }else if(req.body?.event?.removeCover===true && existing?.coverPathname){
+            await deleteEventCover(existing.coverPathname);event={...event,coverPathname:'',coverUpdatedAt:new Date().toISOString()};
+          }
           const idx=events.findIndex(e=>e.id===event.id);if(idx>=0)events[idx]=event;else events.push(event);await saveEvents(events);return res.status(200).json({ok:true,event});
         }
-        if(action==='delete-event'){const id=safeText(req.body?.id,90),events=await getEvents(),next=events.filter(e=>e.id!==id);if(next.length===events.length)return res.status(404).json({error:'Evento no encontrado.'});await saveEvents(next);await deleteEventData(id);return res.status(200).json({ok:true});}
+        if(action==='delete-event'){const id=safeText(req.body?.id,90),events=await getEvents(),existing=events.find(e=>e.id===id),next=events.filter(e=>e.id!==id);if(next.length===events.length)return res.status(404).json({error:'Evento no encontrado.'});await deleteEventData(id,existing);await saveEvents(next);return res.status(200).json({ok:true});}
       }
 
       // Acciones de integrantes autorizados para eventos.
@@ -60,9 +69,10 @@ export default async function handler(req, res) {
       const eventId=safeText(req.body?.eventId,90); const event=await getEvent(eventId);
       if(!event || event.visible===false)return res.status(404).json({error:'Evento no encontrado.'});
       if(action==='event-detail'){
-        const [comments,index]=await Promise.all([getComments(eventId),getPhotoIndex(eventId)]);
+        const [comments,index,summaries]=await Promise.all([getComments(eventId),getPhotoIndex(eventId),getEventSummaries()]);
         const mine=index.filter(p=>p.userId===session.userId).length;
-        return res.status(200).json({ok:true,event,comments,photoCount:index.length,myPhotoCount:mine});
+        const clientEvent=summaries.find(e=>e.id===eventId)||event;
+        return res.status(200).json({ok:true,event:clientEvent,comments,photoCount:index.length,myPhotoCount:mine});
       }
       if(action==='event-photos'){
         const offset=Math.max(0,Number(req.body?.offset)||0);const page=await getPhotoPage(eventId,offset,12);return res.status(200).json({ok:true,...page});
