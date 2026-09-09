@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#5c0e18">
 <title>Cancionero · Tuna de Derecho FES Acatlán</title>
 <link rel="manifest" href="/manifest.json">
@@ -32,12 +32,15 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0;}
+  html,body{margin:0; padding:0; background:#2a0509;}
+  html{min-height:100%;overscroll-behavior-y:none;}
   body{
     background:
       radial-gradient(1200px 600px at 50% -10%, var(--rojo-brillo) 0%, var(--vino) 45%, var(--vino-oscuro) 100%);
     background-attachment:fixed;
     min-height:100vh;
+    min-height:100dvh;
+    overscroll-behavior-y:none;
     font-family: var(--font-titulo);
     color: var(--marfil);
     overflow-x:hidden;
@@ -366,6 +369,11 @@
     backdrop-filter:blur(8px);
   }
   .settings-fab:active{transform:scale(.96)}
+  @media (display-mode: standalone){
+    header.top{padding-top:calc(14px + env(safe-area-inset-top));}
+    .settings-fab{top:calc(14px + env(safe-area-inset-top));}
+    .settings-panel{top:calc(64px + env(safe-area-inset-top));}
+  }
   .settings-panel{
     position:fixed;
     top:64px;
@@ -440,6 +448,7 @@
   .events-list{display:grid;gap:9px}.event-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border-radius:12px;border:1px solid rgba(228,200,116,.28);background:rgba(255,255,255,.07);cursor:pointer}.event-card:active{transform:scale(.985)}.event-card h3{margin:0 0 4px;font:700 16px var(--font-titulo);color:var(--marfil)}.event-card p{margin:0;font:11px/1.5 var(--font-mono);color:var(--dorado-suave)}.event-card .event-kind{display:inline-block;margin-right:6px;color:var(--dorado);font-weight:800}.event-card .event-chevron{font-size:22px;color:var(--dorado)}.event-card .mini-countdown{margin-top:5px;color:#ffe79a;font-weight:800}.events-empty{font:12px var(--font-mono);color:var(--dorado-suave);padding:6px 2px}
   #vista-evento{display:none}#vista-evento.activa{display:block}.event-hero{border:1px solid rgba(228,200,116,.38);border-radius:16px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.025));margin-bottom:14px}.event-hero .tag{display:inline-block;padding:5px 8px;border-radius:999px;background:var(--dorado);color:var(--vino-oscuro);font:800 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase}.event-hero h2{margin:10px 0 6px;font:700 27px var(--font-display);color:var(--marfil)}.event-meta{font:12px/1.65 var(--font-mono);color:var(--dorado-suave)}.event-description{margin-top:12px;white-space:pre-wrap;font:15px/1.6 var(--font-titulo);color:var(--marfil)}.countdown-box{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0 0}.count-unit{text-align:center;padding:10px 5px;border-radius:11px;background:rgba(0,0,0,.24);border:1px solid rgba(228,200,116,.2)}.count-unit strong{display:block;font:800 22px var(--font-mono);color:var(--dorado)}.count-unit span{font:9px var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--dorado-suave)}
   .event-panel{border:1px solid rgba(228,200,116,.25);border-radius:14px;padding:14px;margin-top:12px;background:rgba(0,0,0,.14)}.event-panel h3{margin:0 0 10px;color:var(--dorado);font:700 18px var(--font-titulo)}.comment-list{display:grid;gap:9px;max-height:420px;overflow:auto}.comment-item{padding:10px 11px;border-radius:10px;background:rgba(255,255,255,.055);border:1px solid rgba(228,200,116,.13)}.comment-item strong{font-size:13px;color:var(--dorado)}.comment-item small{display:block;font:10px var(--font-mono);color:var(--dorado-suave);margin:2px 0 5px}.comment-item p{margin:0;white-space:pre-wrap;font-size:14px;line-height:1.45}.event-comment-form{display:grid;gap:8px;margin-top:12px}.event-comment-form textarea,.event-photo-tools input[type=text]{width:100%;border:1px solid rgba(201,162,39,.4);border-radius:10px;padding:10px;background:rgba(255,255,255,.06);color:var(--marfil);font:14px var(--font-titulo)}.event-action{border:0;border-radius:999px;padding:10px 14px;background:linear-gradient(135deg,var(--dorado),var(--dorado-suave));color:var(--vino-oscuro);font-weight:800;cursor:pointer}.event-action.secondary{background:transparent;color:var(--dorado);border:1px solid var(--dorado)}.event-photo-tools{display:grid;gap:8px}.event-photo-tools input[type=file]{font-size:12px;color:var(--dorado-suave)}.photo-limit{font:11px/1.5 var(--font-mono);color:var(--dorado-suave)}.event-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:12px}.gallery-item{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#1d0b0e;border:1px solid rgba(228,200,116,.18)}.gallery-item img{width:100%;height:100%;object-fit:cover;display:block}.gallery-item .photo-mote{position:absolute;left:5px;bottom:5px;right:5px;padding:3px 5px;border-radius:6px;background:rgba(0,0,0,.6);font:9px var(--font-mono);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gallery-empty{font:12px var(--font-mono);color:var(--dorado-suave)}.event-status{min-height:18px;margin-top:7px;font:11px var(--font-mono);color:var(--dorado-suave)}
+  .offline-event-note{display:none;margin:0 0 12px;padding:10px 12px;border-radius:11px;border:1px solid rgba(228,200,116,.35);background:rgba(0,0,0,.22);font:11px/1.5 var(--font-mono);color:var(--dorado-suave)}.offline-event-note.show{display:block}
   .photo-viewer{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.88)}.photo-viewer.open{display:flex}.photo-viewer-inner{max-width:900px;width:100%;text-align:center}.photo-viewer img{max-width:100%;max-height:78vh;border-radius:12px}.photo-viewer p{color:#fff;font-size:13px}.photo-viewer button{margin-top:8px}
 
   /* v28 · Próximo evento destacado */
@@ -495,6 +504,7 @@
     </section>
     <section id="vista-evento">
       <button class="back-btn" id="btn-volver-evento">‹ Volver al índice</button>
+      <div class="offline-event-note" id="offlineEventNote">📴 Viendo la información guardada de este evento. Comentarios y álbum se actualizarán cuando tengas conexión.</div>
       <div class="event-hero"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div>
       <div class="event-panel" id="commentsPanel"><h3>💬 Comentarios</h3><div class="comment-list" id="eventCommentsList"></div><div class="event-comment-form" id="eventCommentForm"><textarea id="eventCommentText" maxlength="600" rows="3" placeholder="Escribe algo sobre este evento…"></textarea><button class="event-action" id="btnEventComment">Publicar comentario</button></div><div class="event-status" id="eventCommentStatus"></div></div>
       <div class="event-panel" id="photosPanel"><h3>📸 Álbum grupal</h3><div class="photo-limit" id="eventPhotoLimit"></div><div class="event-photo-tools" id="eventPhotoTools"><input id="eventPhotoFile" type="file" accept="image/*"><input id="eventPhotoCaption" type="text" maxlength="160" placeholder="Pie de foto (opcional)"><button class="event-action" id="btnEventPhoto">Subir foto</button></div><div class="event-status" id="eventPhotoStatus"></div><div class="event-gallery" id="eventGallery"></div><button class="event-action secondary" id="btnMoreEventPhotos" style="display:none;margin-top:10px">Ver más fotos</button></div>
@@ -788,17 +798,30 @@ $btnVolver.addEventListener('click', volverALista);
   let EVENTO_ACTUAL=null,EVENT_PHOTO_OFFSET=0,EVENT_PHOTO_NEXT=null,COUNTDOWN_TIMER=null;
   async function eventPost(payload){const r=await fetch('/api/cancionero',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'No se pudo completar la acción');return d;}
   const PRIVATE_ASSET_CACHE=new Map();
+  const PRIVATE_ASSET_CACHE_NAME='cancionero-private-assets-v1';
+  const EVENT_DETAIL_CACHE_KEY='cancionero_event_details_v1';
+  function leerDetallesEventosOffline(){try{return JSON.parse(localStorage.getItem(EVENT_DETAIL_CACHE_KEY)||'{}')||{};}catch{return {};}}
+  function guardarDetalleEventoOffline(eventId,data){try{const all=leerDetallesEventosOffline();all[eventId]={...data,savedAt:Date.now()};localStorage.setItem(EVENT_DETAIL_CACHE_KEY,JSON.stringify(all));}catch(err){console.warn('No se pudo guardar detalle offline del evento:',err);}}
+  function detalleEventoOffline(eventId){return leerDetallesEventosOffline()[eventId]||null;}
   async function privateAssetUrl(url){
     if(!url) return '';
     if(url.startsWith('data:')||url.startsWith('blob:')) return url;
     if(PRIVATE_ASSET_CACHE.has(url)) return PRIVATE_ASSET_CACHE.get(url);
-    const r=await fetch(url,{headers:authHeaders(),cache:'no-store'});
-    if(!r.ok) throw new Error('No se pudo cargar la imagen privada');
-    const blob=await r.blob();
+    let response=null;
+    try{
+      if(navigator.onLine){
+        response=await fetch(url,{headers:authHeaders(),cache:'no-store'});
+        if(response.ok && 'caches' in window){try{const c=await caches.open(PRIVATE_ASSET_CACHE_NAME);await c.put(url,response.clone());}catch{}}
+      }
+    }catch{}
+    if((!response||!response.ok) && 'caches' in window){try{response=await caches.match(url);}catch{}}
+    if(!response||!response.ok) throw new Error('No se pudo cargar la imagen privada');
+    const blob=await response.blob();
     const objectUrl=URL.createObjectURL(blob);
     PRIVATE_ASSET_CACHE.set(url,objectUrl);
     return objectUrl;
   }
+  async function precacheEventCovers(){if(!navigator.onLine||!Array.isArray(EVENTOS))return;for(const e of EVENTOS){if(e?.coverImageUrl){try{await privateAssetUrl(e.coverImageUrl);}catch{}}}}
   async function setPrivateBackground(el,url){
     if(!el||!url)return;
     try{const src=await privateAssetUrl(url);el.style.backgroundImage=`url("${src.replace(/"/g,'%22')}")`;}catch(err){console.warn('No se pudo mostrar portada:',err);}
@@ -811,7 +834,36 @@ $btnVolver.addEventListener('click', volverALista);
   function renderCountdown(){if(!EVENTO_ACTUAL?.countdown||eventHasPassed(EVENTO_ACTUAL)){ $('eventCountdownBox').style.display='none'; return; }const target=new Date(EVENTO_ACTUAL.date).getTime(),diff=target-Date.now();if(!Number.isFinite(diff)||diff<=0){$('eventCountdownBox').style.display='none';return;}$('eventCountdownBox').style.display='grid';const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),sec=Math.floor(diff%60000/1000);$('cdDays').textContent=d;$('cdHours').textContent=h;$('cdMinutes').textContent=m;$('cdSeconds').textContent=sec;}
   function renderEventComments(comments=[]){const box=$('eventCommentsList');box.innerHTML='';if(!comments.length){box.innerHTML='<div class="gallery-empty">Todavía no hay comentarios. Puedes ser el primero.</div>';return;}comments.forEach(c=>{const item=document.createElement('div');item.className='comment-item';const name=document.createElement('strong');name.textContent=c.mote||'Integrante';const time=document.createElement('small');try{time.textContent=new Date(c.createdAt).toLocaleString('es-MX');}catch{time.textContent='';}const p=document.createElement('p');p.textContent=c.text||'';item.append(name,time,p);box.appendChild(item);});box.scrollTop=box.scrollHeight;}
   async function cargarFotosEvento(reset=false){if(!EVENTO_ACTUAL)return;if(reset){EVENT_PHOTO_OFFSET=0;EVENT_PHOTO_NEXT=null;$('eventGallery').innerHTML='';}const d=await eventPost({action:'event-photos',eventId:EVENTO_ACTUAL.id,offset:EVENT_PHOTO_OFFSET});if(reset && !d.items?.length)$('eventGallery').innerHTML='<div class="gallery-empty">Todavía no hay fotos. Sube la primera del álbum.</div>';if(d.items?.length && $('eventGallery').querySelector('.gallery-empty'))$('eventGallery').innerHTML='';for(const photo of d.items||[]){const wrap=document.createElement('div');wrap.className='gallery-item';const img=document.createElement('img');img.loading='lazy';const photoSrc=photo.imageUrl||photo.imageData||'';if(photo.imageUrl)setPrivateImg(img,photo.imageUrl);else img.src=photoSrc;img.alt=photo.caption||`Foto de ${photo.mote||'integrante'}`;const mote=document.createElement('div');mote.className='photo-mote';mote.textContent=photo.mote||'Integrante';wrap.append(img,mote);wrap.onclick=async()=>{ const viewer=$('photoViewerImg'); if(photo.imageUrl) await setPrivateImg(viewer,photo.imageUrl); else viewer.src=photo.imageData||'';$('photoViewerCaption').textContent=`${photo.mote||'Integrante'}${photo.caption?' · '+photo.caption:''}`;$('photoViewer').classList.add('open');};$('eventGallery').appendChild(wrap);}EVENT_PHOTO_NEXT=d.nextOffset;$('btnMoreEventPhotos').style.display=EVENT_PHOTO_NEXT===null?'none':'inline-block';if(EVENT_PHOTO_NEXT!==null)EVENT_PHOTO_OFFSET=EVENT_PHOTO_NEXT;}
-  window.abrirEvento=async function(eventId,{pushHistory=true}={}){try{const d=await eventPost({action:'event-detail',eventId});EVENTO_ACTUAL=d.event;const hero=document.querySelector('.event-hero');if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}$('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';renderEventComments(d.comments||[]);$('commentsPanel').style.display=d.event.commentsEnabled===false?'none':'block';$('photosPanel').style.display=d.event.photosEnabled===false?'none':'block';$('eventPhotoLimit').textContent=`Has subido ${d.myPhotoCount||0} de ${d.event.maxPhotosPerUser||5} fotos permitidas en este evento. Álbum: ${d.photoCount||0} foto(s).`;$('eventPhotoTools').style.display=(d.myPhotoCount||0)>=(d.event.maxPhotosPerUser||5)?'none':'grid';renderCountdown();clearInterval(COUNTDOWN_TIMER);COUNTDOWN_TIMER=setInterval(renderCountdown,1000);$vistaDetalle.classList.remove('activa');$vistaLista.classList.add('oculta');$vistaEvento.classList.add('activa');document.body.classList.add('detail-open');await cargarFotosEvento(true);if(pushHistory)history.pushState({view:'event',eventId},'',`#evento=${encodeURIComponent(eventId)}`);window.scrollTo({top:0,behavior:'instant'});}catch(err){alert(err.message||'No se pudo abrir el evento.');}};
+  window.abrirEvento=async function(eventId,{pushHistory=true}={}){
+    let d=null,offlineMode=false;
+    try{
+      if(navigator.onLine){
+        try{d=await eventPost({action:'event-detail',eventId});guardarDetalleEventoOffline(eventId,d);}catch(err){const cached=detalleEventoOffline(eventId);if(cached){d=cached;offlineMode=true;}else throw err;}
+      }else{
+        const cached=detalleEventoOffline(eventId);
+        const summary=(EVENTOS||[]).find(e=>e.id===eventId);
+        if(cached)d=cached;
+        else if(summary)d={event:summary,comments:[],photoCount:summary.photoCount||0,myPhotoCount:0};
+        else throw new Error('Este evento todavía no está guardado para verlo sin conexión.');
+        offlineMode=true;
+      }
+      EVENTO_ACTUAL=d.event;
+      const hero=document.querySelector('.event-hero');
+      if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}
+      $('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';
+      renderEventComments(d.comments||[]);
+      $('offlineEventNote').classList.toggle('show',offlineMode);
+      $('commentsPanel').style.display=d.event.commentsEnabled===false?'none':'block';$('photosPanel').style.display=d.event.photosEnabled===false?'none':'block';
+      $('eventCommentForm').style.display=offlineMode?'none':'grid';
+      $('eventPhotoTools').style.display=offlineMode?'none':((d.myPhotoCount||0)>=(d.event.maxPhotosPerUser||5)?'none':'grid');
+      $('eventCommentStatus').textContent=offlineMode?'Los comentarios requieren conexión.':'';
+      $('eventPhotoStatus').textContent=offlineMode?'El álbum requiere conexión para actualizarse.':'';
+      $('eventPhotoLimit').textContent=`Has subido ${d.myPhotoCount||0} de ${d.event.maxPhotosPerUser||5} fotos permitidas en este evento. Álbum: ${d.photoCount||0} foto(s).`;
+      renderCountdown();clearInterval(COUNTDOWN_TIMER);COUNTDOWN_TIMER=setInterval(renderCountdown,1000);$vistaDetalle.classList.remove('activa');$vistaLista.classList.add('oculta');$vistaEvento.classList.add('activa');document.body.classList.add('detail-open');
+      if(!offlineMode){await cargarFotosEvento(true);}else{$('eventGallery').innerHTML='<div class="gallery-empty">Conéctate para cargar o actualizar el álbum grupal.</div>';$('btnMoreEventPhotos').style.display='none';}
+      if(pushHistory)history.pushState({view:'event',eventId},'',`#evento=${encodeURIComponent(eventId)}`);window.scrollTo({top:0,behavior:'instant'});
+    }catch(err){alert(err.message||'No se pudo abrir el evento.');}
+  };
   function cerrarEvento(){clearInterval(COUNTDOWN_TIMER);COUNTDOWN_TIMER=null;EVENTO_ACTUAL=null;$vistaEvento.classList.remove('activa');$vistaLista.classList.remove('oculta');document.body.classList.remove('detail-open');window.scrollTo({top:0,behavior:'instant'});}
   $('btn-volver-evento').onclick=()=>{if(history.state?.view==='event')history.back();else cerrarEvento();};
   $('btnEventComment').onclick=async()=>{const text=$('eventCommentText').value.trim();if(!text||!EVENTO_ACTUAL)return;$('eventCommentStatus').textContent='Publicando…';try{const d=await eventPost({action:'add-event-comment',eventId:EVENTO_ACTUAL.id,text});$('eventCommentText').value='';const detail=await eventPost({action:'event-detail',eventId:EVENTO_ACTUAL.id});renderEventComments(detail.comments||[]);$('eventCommentStatus').textContent='✅ Comentario publicado.';}catch(err){$('eventCommentStatus').textContent='❌ '+err.message;}};
@@ -902,7 +954,7 @@ $btnVolver.addEventListener('click', volverALista);
   formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
@@ -998,6 +1050,7 @@ $btnVolver.addEventListener('click', volverALista);
       ultimaSincronizacion=Date.now();
       renderLista($buscador?.value||'');
       renderEventos();
+      precacheEventCovers();
       mostrarPopupSiNuevo(d.popup);
       if(anterior?.version && anterior.version!==d.version) statusSync(`✅ Cancionero actualizado · versión ${d.version}`);
       else statusSync(`✅ Versión al día · ${fechaCorta(ultimaSincronizacion)}`);
