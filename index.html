@@ -949,7 +949,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   const token = () => localStorage.getItem('cancionero_token');
   const settingsPanel = $('settingsPanel');
   settingsPanel.addEventListener('click',e=>e.stopPropagation());
-  document.addEventListener('click',()=>settingsPanel.classList.remove('open'));
+  document.addEventListener('click',e=>{ if(e.target.closest('[data-premium-nav="settings"]')) return; if(!e.target.closest('#settingsPanel')) settingsPanel.classList.remove('open'); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') settingsPanel.classList.remove('open'); });
 
   function statusNotif(text, visible=true){ notifStatus.textContent=text; notifStatus.style.display=visible?'block':'none'; }
