@@ -318,6 +318,44 @@
     padding:14px;
   }
 
+
+  /* ---------- V36 · VISTA PREMIUM DE CANCIÓN ---------- */
+  #vista-detalle{padding:0 0 28px;}
+  .song-premium-shell{position:relative;}
+  .song-premium-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .song-premium-back{width:42px;height:42px;border-radius:50%;border:1px solid rgba(228,200,116,.38);background:rgba(17,12,12,.82);color:var(--dorado-suave);font-size:28px;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px rgba(0,0,0,.24)}
+  .song-premium-kicker{font:700 10px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(228,200,116,.75);text-align:center;flex:1;}
+  .song-size-controls{display:flex;align-items:center;gap:5px;}
+  .song-size-btn{width:36px;height:36px;border-radius:12px;border:1px solid rgba(228,200,116,.28);background:rgba(17,12,12,.78);color:var(--marfil);font:700 12px var(--font-mono);cursor:pointer;}
+  .song-size-btn:active{transform:scale(.96)}
+  .song-premium-hero{position:relative;min-height:225px;border-radius:22px;overflow:hidden;border:1px solid rgba(213,173,90,.45);background:radial-gradient(circle at 18% 22%,rgba(150,22,35,.68),transparent 32%),linear-gradient(145deg,#391016 0%,#170e0e 60%,#0e0b0b 100%);box-shadow:0 18px 44px rgba(0,0,0,.34);margin-bottom:14px;}
+  .song-premium-hero::before{content:'♫';position:absolute;right:-18px;bottom:-48px;font:900 210px/1 var(--font-display);color:rgba(228,200,116,.055);transform:rotate(-9deg);pointer-events:none;}
+  .song-premium-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 52%,rgba(0,0,0,.76) 100%);pointer-events:none;}
+  .song-hero-ornament{position:absolute;top:18px;left:18px;z-index:2;width:62px;height:62px;border-radius:18px;display:grid;place-items:center;border:1px solid rgba(228,200,116,.35);background:rgba(10,8,8,.45);font-size:30px;backdrop-filter:blur(9px)}
+  .song-hero-content{position:absolute;z-index:3;left:20px;right:20px;bottom:18px;}
+  .song-hero-label{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(228,200,116,.28);background:rgba(12,9,9,.62);border-radius:999px;padding:7px 10px;font:700 10px var(--font-mono);letter-spacing:.08em;color:var(--dorado-suave);text-transform:uppercase;margin-bottom:9px;}
+  .song-premium-title{margin:0;color:#fff8ea;font:700 clamp(30px,8vw,42px)/1.05 var(--font-titulo);letter-spacing:-.02em;text-shadow:0 3px 18px rgba(0,0,0,.65);}
+  .song-premium-music{margin-top:9px;max-width:95%;color:rgba(247,240,223,.82);font:400 11px/1.45 var(--font-mono);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .song-detail-tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 12px;}
+  .song-detail-tool{border:1px solid rgba(213,173,90,.22);background:linear-gradient(145deg,rgba(37,29,27,.94),rgba(18,15,14,.96));border-radius:15px;padding:11px 12px;min-width:0;}
+  .song-detail-tool span{display:block;color:rgba(228,200,116,.66);font:700 9px var(--font-mono);text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px;}
+  .song-detail-tool strong{display:block;color:var(--marfil);font:700 13px/1.3 var(--font-titulo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .song-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:5px;border:1px solid rgba(213,173,90,.22);background:rgba(11,9,9,.72);border-radius:16px;margin-bottom:12px;position:sticky;top:8px;z-index:12;backdrop-filter:blur(14px)}
+  .song-tab-btn{border:0;border-radius:12px;padding:11px 10px;background:transparent;color:rgba(247,240,223,.72);font:700 12px var(--font-mono);cursor:pointer;transition:.18s ease;}
+  .song-tab-btn.active{background:linear-gradient(135deg,#7e1320,#5b0d16);color:#fff6df;box-shadow:inset 0 0 0 1px rgba(228,200,116,.42),0 7px 20px rgba(0,0,0,.22)}
+  .song-sheet{--song-text-size:17px;position:relative;border-radius:22px;padding:24px 18px 26px;color:#2d241a;background:linear-gradient(rgba(249,239,211,.965),rgba(238,220,180,.97)),repeating-linear-gradient(0deg,rgba(93,66,37,.035) 0 1px,transparent 1px 4px);border:1px solid rgba(196,155,72,.6);box-shadow:0 18px 44px rgba(0,0,0,.3),inset 0 0 36px rgba(120,79,32,.09);overflow-x:auto;}
+  .song-sheet::before,.song-sheet::after{content:'✦';position:absolute;color:rgba(116,72,35,.28);font-size:18px}.song-sheet::before{top:9px;left:11px}.song-sheet::after{bottom:9px;right:11px}
+  .song-sheet .estrofa{margin-bottom:24px;}
+  .song-sheet .linea{font-family:Georgia,'Times New Roman',serif;font-size:var(--song-text-size);line-height:1.48;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .song-sheet .linea.texto{color:#2d241a;margin-bottom:8px;}
+  .song-sheet .linea.acordes{font-family:var(--font-mono);font-size:calc(var(--song-text-size) - 2px);line-height:1.25;color:#7c111c;font-weight:700;white-space:pre;overflow:visible;min-width:max-content;margin-bottom:2px;}
+  .song-sheet.lyrics-only .linea.acordes{display:none;}
+  .song-sheet .pendiente-msg{color:#4c3a26;background:rgba(255,255,255,.28);border-color:rgba(106,72,28,.35);font-family:Georgia,serif;font-size:15px;}
+  .song-sheet-foot{text-align:center;margin-top:18px;color:rgba(93,57,30,.65);font:700 11px var(--font-display);letter-spacing:.14em;}
+  body.theme-light .song-premium-back,body.theme-light .song-size-btn,body.theme-light .song-tabs{background:rgba(255,255,255,.82)}
+  body.theme-light .song-premium-kicker{color:#6d4b13} body.theme-light .song-size-btn{color:#3c241c}
+  @media(max-width:390px){.song-premium-topbar{gap:6px}.song-size-controls{gap:3px}.song-size-btn{width:33px;height:33px}.song-premium-back{width:38px;height:38px}.song-premium-hero{min-height:205px}.song-sheet{padding:22px 14px 24px}}
+
   footer.tab{
     position:sticky;
     bottom:0;
@@ -543,12 +581,33 @@ body.detail-open .premium-bottom-nav{display:none}
     </section>
 
     <section id="vista-detalle">
-      <button class="back-btn" id="btn-volver">‹ Volver al índice</button>
-      <div class="song-header">
-        <h2 id="detalle-titulo"></h2>
-        <div class="musica" id="detalle-musica"></div>
+      <div class="song-premium-shell">
+        <div class="song-premium-topbar">
+          <button class="song-premium-back" id="btn-volver" aria-label="Volver al cancionero">‹</button>
+          <div class="song-premium-kicker">Tuna de Derecho · Canción</div>
+          <div class="song-size-controls" aria-label="Tamaño de letra">
+            <button class="song-size-btn" id="songTextMinus" type="button" aria-label="Reducir tamaño">A−</button>
+            <button class="song-size-btn" id="songTextPlus" type="button" aria-label="Aumentar tamaño">A+</button>
+          </div>
+        </div>
+        <div class="song-premium-hero">
+          <div class="song-hero-ornament">♫</div>
+          <div class="song-hero-content">
+            <div class="song-hero-label" id="songHeroLabel">Repertorio</div>
+            <h2 class="song-premium-title" id="detalle-titulo"></h2>
+            <div class="song-premium-music" id="detalle-musica"></div>
+          </div>
+        </div>
+        <div class="song-detail-tools">
+          <div class="song-detail-tool"><span>Vista</span><strong id="songViewLabel">Letra limpia</strong></div>
+          <div class="song-detail-tool"><span>Tamaño</span><strong id="songSizeLabel">Mediano</strong></div>
+        </div>
+        <div class="song-tabs" role="tablist" aria-label="Vista de canción">
+          <button class="song-tab-btn active" id="songTabLyrics" type="button" role="tab" aria-selected="true">♫ Letra</button>
+          <button class="song-tab-btn" id="songTabChords" type="button" role="tab" aria-selected="false">♬ Acordes</button>
+        </div>
+        <div class="letra-box song-sheet lyrics-only" id="detalle-letra"></div>
       </div>
-      <div class="letra-box" id="detalle-letra"></div>
     </section>
     <section id="vista-evento">
       <div class="event-detail-topbar"><button class="event-detail-back" id="btn-volver-evento" aria-label="Volver">‹</button><span class="event-detail-kicker">Tuna de Derecho · Evento</span><span></span></div>
@@ -665,6 +724,14 @@ const $btnVolver     = document.getElementById('btn-volver');
 const $detTitulo     = document.getElementById('detalle-titulo');
 const $detMusica     = document.getElementById('detalle-musica');
 const $detLetra      = document.getElementById('detalle-letra');
+const $songTabLyrics = document.getElementById('songTabLyrics');
+const $songTabChords = document.getElementById('songTabChords');
+const $songViewLabel = document.getElementById('songViewLabel');
+const $songSizeLabel = document.getElementById('songSizeLabel');
+const $songTextMinus = document.getElementById('songTextMinus');
+const $songTextPlus  = document.getElementById('songTextPlus');
+let songDetailMode = 'lyrics';
+let songTextSize = Math.max(14, Math.min(24, Number(localStorage.getItem('cancionero_song_text_size_v1')) || 17));
 
 function normalizar(str){
   return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -752,15 +819,39 @@ function renderLista(filtro=''){
   $contador.textContent = `${resultado.length} de ${CANCIONES.length} canciones`; const psc=document.getElementById('premiumSongCount'); if(psc) psc.textContent=`${CANCIONES.length} canciones`;
 }
 
+
+function aplicarModoCancion(mode){
+  songDetailMode = mode === 'chords' ? 'chords' : 'lyrics';
+  $detLetra?.classList.toggle('lyrics-only', songDetailMode === 'lyrics');
+  $songTabLyrics?.classList.toggle('active', songDetailMode === 'lyrics');
+  $songTabChords?.classList.toggle('active', songDetailMode === 'chords');
+  $songTabLyrics?.setAttribute('aria-selected', String(songDetailMode === 'lyrics'));
+  $songTabChords?.setAttribute('aria-selected', String(songDetailMode === 'chords'));
+  if($songViewLabel) $songViewLabel.textContent = songDetailMode === 'lyrics' ? 'Letra limpia' : 'Letra + acordes';
+}
+function aplicarTamanoCancion(){
+  if($detLetra) $detLetra.style.setProperty('--song-text-size', `${songTextSize}px`);
+  if($songSizeLabel) $songSizeLabel.textContent = songTextSize <= 15 ? 'Pequeño' : songTextSize <= 18 ? 'Mediano' : songTextSize <= 21 ? 'Grande' : 'Muy grande';
+  localStorage.setItem('cancionero_song_text_size_v1', String(songTextSize));
+}
+$songTabLyrics?.addEventListener('click',()=>aplicarModoCancion('lyrics'));
+$songTabChords?.addEventListener('click',()=>aplicarModoCancion('chords'));
+$songTextMinus?.addEventListener('click',()=>{songTextSize=Math.max(14,songTextSize-1);aplicarTamanoCancion();});
+$songTextPlus?.addEventListener('click',()=>{songTextSize=Math.min(24,songTextSize+1);aplicarTamanoCancion();});
+aplicarTamanoCancion();
+aplicarModoCancion('lyrics');
+
 function mostrarDetalle(cancion, {pushHistory=true}={}){
+  aplicarModoCancion('lyrics');
+  aplicarTamanoCancion();
   $detTitulo.textContent = cancion.titulo;
   $detMusica.textContent = cancion.musica || (cancion.pagina !== undefined ? `Página ${cancion.pagina} de tu cancionero` : '');
+  const heroLabel=document.getElementById('songHeroLabel'); if(heroLabel) heroLabel.textContent=cancion.origin==='admin'?'Repertorio · Nueva':'Repertorio';
 
   if (!cancion.estrofas){
     $detLetra.innerHTML = `<div class="pendiente-msg">
       Esta canción todavía no tiene la letra cargada.<br><br>
-      Ábrela en tu PDF (pág. ${cancion.pagina}) y pega los acordes y el
-      texto en el objeto de esta canción dentro del código.
+      Esta canción todavía no tiene letra cargada. Puedes agregarla o editarla desde el panel de administrador.
     </div>`;
   } else {
     $detLetra.innerHTML = '';
@@ -783,6 +874,7 @@ function mostrarDetalle(cancion, {pushHistory=true}={}){
       });
       $detLetra.appendChild(div);
     });
+    const foot=document.createElement('div'); foot.className='song-sheet-foot'; foot.textContent='✦  TUNA DE DERECHO · FES ACATLÁN  ✦'; $detLetra.appendChild(foot);
   }
 
   $vistaEvento.classList.remove('activa');
