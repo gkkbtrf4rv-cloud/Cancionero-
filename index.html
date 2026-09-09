@@ -460,6 +460,42 @@
   body.theme-light .events-zone{background:linear-gradient(135deg,#fff8ef,#f4e6dd)}body.theme-light .events-zone.past{background:linear-gradient(135deg,#f3eee9,#e9e0da)}body.theme-light .event-card,body.theme-light .event-hero,body.theme-light .event-panel,body.theme-light .comment-item{background:rgba(255,255,255,.75);color:#2f171b}body.theme-light .event-card h3,body.theme-light .event-hero h2,body.theme-light .event-description,body.theme-light .comment-item p{color:#2f171b}body.theme-light .event-comment-form textarea,body.theme-light .event-photo-tools input[type=text]{background:#fff;color:#2f171b}
   @media(max-width:560px){.countdown-box{grid-template-columns:repeat(4,1fr)}.count-unit strong{font-size:18px}.event-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+
+/* ===== v35 · Rediseño premium Tuna ===== */
+:root{
+  --premium-bg:#0d0b0b;
+  --premium-card:#171313;
+  --premium-card-2:#201817;
+  --premium-wine:#741523;
+  --premium-wine-2:#4d0b14;
+  --premium-gold:#d5ad5a;
+  --premium-gold-soft:#f0d58e;
+  --premium-cream:#f4ead4;
+}
+body{background:radial-gradient(900px 500px at 50% -120px,#2b1713 0%,#120d0c 48%,#090808 100%);}
+.app{max-width:560px;padding-bottom:82px;}
+header.top{position:relative;top:auto;background:linear-gradient(180deg,rgba(10,9,9,.98),rgba(18,13,13,.96));box-shadow:none;padding:calc(18px + env(safe-area-inset-top)) 18px 16px;border-bottom:1px solid rgba(213,173,90,.12)}
+.crest-row{margin-bottom:16px}.crest{width:62px;height:62px}.titles .eyebrow{color:var(--premium-gold);font-size:10px}.titles h1{font-size:25px;text-transform:none;letter-spacing:.01em}.titles .sub{color:#cbbca4}.search-wrap{border:1px solid rgba(213,173,90,.28);background:#211d1d;border-radius:14px;box-shadow:inset 0 1px rgba(255,255,255,.025)}.search-wrap input{font-family:var(--font-titulo);font-size:15px}.count-line{opacity:.72;margin-top:8px}
+main{padding:18px 16px 30px!important}
+.premium-welcome{margin:0 0 18px}.premium-welcome .hello{font-size:15px;color:#cbbca4;margin-bottom:2px}.premium-welcome h2{margin:0;color:var(--premium-cream);font:700 30px/1.05 var(--font-titulo)}.premium-welcome p{margin:7px 0 0;color:#9f9386;font-size:13px}
+.premium-shortcuts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0 22px}.premium-shortcut{min-height:94px;border:1px solid rgba(213,173,90,.23);border-radius:16px;padding:14px;background:linear-gradient(145deg,#1d1817,#151212);color:var(--premium-cream);text-align:left;position:relative;overflow:hidden;cursor:pointer}.premium-shortcut.primary{background:linear-gradient(145deg,#771927,#4a0d15);border-color:rgba(230,184,91,.38)}.premium-shortcut .shortcut-icon{display:block;font-size:25px;margin-bottom:8px;color:var(--premium-gold)}.premium-shortcut strong{display:block;font:700 18px var(--font-titulo)}.premium-shortcut small{display:block;color:#b7aa9b;margin-top:3px;font-size:11px}.premium-shortcut::after{content:'›';position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--premium-gold);font-size:24px}
+.premium-section-title{display:flex;align-items:end;justify-content:space-between;margin:22px 2px 11px}.premium-section-title h2{margin:0;font:700 23px var(--font-titulo);color:var(--premium-cream)}.premium-section-title span{font:11px var(--font-mono);color:var(--premium-gold)}
+.events-zone-head h2{font:700 23px var(--font-titulo);color:var(--premium-cream)}
+.featured-event{border-radius:20px;border:1px solid rgba(213,173,90,.32);min-height:410px;background:#1c1112;box-shadow:0 18px 50px rgba(0,0,0,.34)}.featured-event-content{min-height:410px;padding:19px}.featured-event::after{background:linear-gradient(180deg,rgba(0,0,0,.08) 5%,rgba(10,8,8,.2) 35%,rgba(10,8,8,.96) 100%)}.featured-title{font:700 36px/1.02 var(--font-titulo)}.featured-open{border-radius:999px;padding:14px;font-family:var(--font-titulo);font-size:16px;background:linear-gradient(135deg,#8d1627,#5a0f19);color:#fff;border:1px solid rgba(240,213,142,.48);box-shadow:0 7px 20px rgba(72,0,12,.35)}.featured-countdown .unit{background:rgba(18,16,16,.82);border-color:rgba(213,173,90,.22)}.featured-countdown strong{color:var(--premium-gold-soft)}
+.next-events-compact{background:#171313;border-color:rgba(213,173,90,.18);border-radius:16px}.next-events-summary{color:var(--premium-gold)}
+.grid{gap:10px}.song-card{background:linear-gradient(145deg,#191616,#121010)!important;border:1px solid rgba(213,173,90,.18)!important;border-radius:15px!important;padding:15px 16px!important;box-shadow:none!important}.song-card .info h3{font:700 18px var(--font-titulo)!important}.song-card .chevron{color:var(--premium-gold)!important}
+.past-events-footer{margin-top:34px;border-top:1px solid rgba(213,173,90,.14);padding-top:24px}.past-events-footer .events-zone-head h2{font-size:22px}.event-card{background:#171313;border-color:rgba(213,173,90,.16);border-radius:15px}
+/* detalle de evento premium */
+#vista-evento{padding-bottom:15px}.event-detail-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.event-detail-back{width:40px;height:40px;border-radius:50%;border:1px solid rgba(213,173,90,.24);background:#171313;color:var(--premium-gold);font-size:26px;line-height:1;cursor:pointer}.event-detail-kicker{font:10px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--premium-gold)}
+.event-hero{min-height:430px;border:0;border-radius:22px;padding:0;position:relative;overflow:hidden;background:linear-gradient(155deg,#311619,#151111);box-shadow:0 16px 44px rgba(0,0,0,.34);display:flex;align-items:flex-end}.event-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,5,5,.04) 6%,rgba(8,6,6,.22) 38%,rgba(8,6,6,.96) 100%);z-index:0}.event-hero.has-cover::before{background:none}.event-hero>*{position:relative;z-index:1}.event-hero-inner{width:100%;padding:22px}.event-hero .tag{background:rgba(17,14,14,.72);color:var(--premium-gold-soft);border:1px solid rgba(213,173,90,.2);backdrop-filter:blur(10px)}.event-hero h2{font:700 38px/1.02 var(--font-titulo);margin:13px 0 8px}.event-meta{color:#e0d3bd;font-family:var(--font-titulo);font-size:14px}.event-description{color:#d8ccba;font-size:14px;max-height:110px;overflow:auto}.countdown-box{margin-top:16px}.count-unit{background:rgba(16,16,16,.82);border-color:rgba(213,173,90,.16)}.count-unit strong{color:var(--premium-gold-soft)}
+.event-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.event-info-tile{border:1px solid rgba(213,173,90,.16);border-radius:15px;background:#171313;padding:13px}.event-info-tile span{display:block;color:var(--premium-gold);font-size:21px;margin-bottom:4px}.event-info-tile strong{display:block;color:var(--premium-cream);font-size:13px}.event-info-tile small{display:block;color:#9f9386;font-size:11px;margin-top:2px}
+.event-panel{background:#151212;border-color:rgba(213,173,90,.16);border-radius:18px;padding:16px}.event-panel h3{font:700 21px var(--font-titulo);color:var(--premium-cream)}.event-action{background:linear-gradient(135deg,#831725,#580d17);color:#fff;border:1px solid rgba(213,173,90,.32)}
+.premium-bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:80;width:min(560px,100%);padding:8px 14px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(4,1fr);background:rgba(12,10,10,.94);border-top:1px solid rgba(213,173,90,.14);backdrop-filter:blur(14px)}.premium-bottom-nav button{border:0;background:transparent;color:#9f9386;display:grid;place-items:center;gap:2px;font-size:10px;padding:5px;cursor:pointer}.premium-bottom-nav b{font-size:21px;line-height:1;color:#d5ad5a}.premium-bottom-nav button.active,.premium-bottom-nav button.active b{color:#f0d58e}
+footer.tab{display:none!important}.settings-fab{bottom:82px!important}
+body.detail-open .premium-bottom-nav{display:none}
+@media(max-width:420px){.premium-welcome h2{font-size:27px}.featured-event,.featured-event-content{min-height:365px}.featured-title{font-size:31px}.event-hero{min-height:390px}.event-hero h2{font-size:33px}}
+
 </style>
 </head>
 <body>
@@ -486,7 +522,19 @@
 
   <main>
     <section id="vista-lista">
-      <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>📅 Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
+      <div class="premium-welcome" id="inicioPremium">
+        <div class="hello">Bienvenido a tu</div>
+        <h2>Cancionero de Tuna</h2>
+        <p>Tuna de Derecho · FES Acatlán · música, tradición y memoria.</p>
+      </div>
+      <div class="premium-shortcuts">
+        <button class="premium-shortcut primary" type="button" data-premium-nav="songs"><span class="shortcut-icon">♫</span><strong>Repertorio</strong><small>Todas las canciones</small></button>
+        <button class="premium-shortcut" type="button" data-premium-nav="events"><span class="shortcut-icon">▣</span><strong>Eventos</strong><small>Viajes y presentaciones</small></button>
+        <button class="premium-shortcut" type="button" data-premium-nav="past"><span class="shortcut-icon">◷</span><strong>Recuerdos</strong><small>Eventos y álbumes pasados</small></button>
+        <button class="premium-shortcut" type="button" data-premium-nav="settings"><span class="shortcut-icon">⚙</span><strong>Mi cuenta</strong><small>Apariencia y acceso</small></button>
+      </div>
+      <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
+      <div class="premium-section-title" id="songsAnchor"><h2>Canciones</h2><span id="premiumSongCount">Repertorio</span></div>
       <div class="grid" id="lista-canciones"></div>
       <div class="empty-state" id="estado-vacio" style="display:none;">
         No encontramos ninguna canción con ese título.<br>Prueba con otra palabra.
@@ -503,14 +551,21 @@
       <div class="letra-box" id="detalle-letra"></div>
     </section>
     <section id="vista-evento">
-      <button class="back-btn" id="btn-volver-evento">‹ Volver al índice</button>
+      <div class="event-detail-topbar"><button class="event-detail-back" id="btn-volver-evento" aria-label="Volver">‹</button><span class="event-detail-kicker">Tuna de Derecho · Evento</span><span></span></div>
       <div class="offline-event-note" id="offlineEventNote">📴 Viendo la información guardada de este evento. Comentarios y álbum se actualizarán cuando tengas conexión.</div>
-      <div class="event-hero"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div>
+      <div class="event-hero"><div class="event-hero-inner"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div></div>
+      <div class="event-info-grid"><div class="event-info-tile"><span>◉</span><strong>Información</strong><small>Fecha, lugar y detalles del evento</small></div><div class="event-info-tile"><span>♬</span><strong>Comunidad</strong><small>Comentarios y álbum grupal</small></div></div>
       <div class="event-panel" id="commentsPanel"><h3>💬 Comentarios</h3><div class="comment-list" id="eventCommentsList"></div><div class="event-comment-form" id="eventCommentForm"><textarea id="eventCommentText" maxlength="600" rows="3" placeholder="Escribe algo sobre este evento…"></textarea><button class="event-action" id="btnEventComment">Publicar comentario</button></div><div class="event-status" id="eventCommentStatus"></div></div>
       <div class="event-panel" id="photosPanel"><h3>📸 Álbum grupal</h3><div class="photo-limit" id="eventPhotoLimit"></div><div class="event-photo-tools" id="eventPhotoTools"><input id="eventPhotoFile" type="file" accept="image/*"><input id="eventPhotoCaption" type="text" maxlength="160" placeholder="Pie de foto (opcional)"><button class="event-action" id="btnEventPhoto">Subir foto</button></div><div class="event-status" id="eventPhotoStatus"></div><div class="event-gallery" id="eventGallery"></div><button class="event-action secondary" id="btnMoreEventPhotos" style="display:none;margin-top:10px">Ver más fotos</button></div>
     </section>
   </main>
 
+  <nav class="premium-bottom-nav" id="premiumBottomNav" aria-label="Navegación principal">
+    <button type="button" class="active" data-premium-nav="home"><b>⌂</b><span>Inicio</span></button>
+    <button type="button" data-premium-nav="songs"><b>♫</b><span>Canciones</span></button>
+    <button type="button" data-premium-nav="events"><b>▣</b><span>Eventos</span></button>
+    <button type="button" data-premium-nav="settings"><b>⚙</b><span>Cuenta</span></button>
+  </nav>
   <footer class="tab">¡Aúpa Tuna! — Cancionero de la Tuna de Derecho FES Acatlán</footer>
 
 </div>
@@ -694,7 +749,7 @@ function renderLista(filtro=''){
   });
 
   $vacio.style.display = resultado.length === 0 ? 'block' : 'none';
-  $contador.textContent = `${resultado.length} de ${CANCIONES.length} canciones`;
+  $contador.textContent = `${resultado.length} de ${CANCIONES.length} canciones`; const psc=document.getElementById('premiumSongCount'); if(psc) psc.textContent=`${CANCIONES.length} canciones`;
 }
 
 function mostrarDetalle(cancion, {pushHistory=true}={}){
@@ -773,6 +828,16 @@ window.addEventListener('popstate', (event) => {
 
 $buscador.addEventListener('input', e => renderLista(e.target.value));
 $btnVolver.addEventListener('click', volverALista);
+
+function premiumNavigate(target){
+  if(target==='settings'){ document.getElementById('settingsPanel')?.classList.add('open'); return; }
+  const map={home:'inicioPremium',songs:'songsAnchor',events:'eventsZone',past:'pastEventsZone'};
+  const el=document.getElementById(map[target]||'inicioPremium');
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  document.querySelectorAll('.premium-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.premiumNav===target || (target==='past'&&b.dataset.premiumNav==='events')));
+  if(target==='songs') setTimeout(()=>document.getElementById('buscador')?.focus(),350);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-nav]'); if(!b)return; e.preventDefault(); premiumNavigate(b.dataset.premiumNav);});
 
 </script>
 <script>
