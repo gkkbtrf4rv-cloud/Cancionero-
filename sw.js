@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v39";
+const CACHE_NAME = "cancionero-tuna-derecho-v40";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -6,7 +6,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v39', { cache: 'no-store' });
+    const fresh = await fetch('/?app-shell=v40', { cache: 'no-store' });
     if (fresh && fresh.ok) await cache.put('/', fresh.clone());
     await Promise.allSettled([
       cache.add(new Request('/manifest.json', { cache: 'reload' })),
