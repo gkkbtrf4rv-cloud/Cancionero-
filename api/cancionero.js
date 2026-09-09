@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Readable } from 'node:stream';
 import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs } from '../lib/song-store.js';
@@ -46,7 +47,21 @@ export default async function handler(req, res) {
           const idx=songs.findIndex(s=>s.id===song.id);if(idx>=0)songs[idx]=song;else songs.push(song);const saved=await saveAllSongs(songs);return res.status(200).json({ok:true,song,total:saved.length});
         }
         if(action==='delete-song'||action==='delete-custom-song'){const id=String(req.body?.id||'').trim(),songs=await getAllSongs(),next=songs.filter(s=>s.id!==id);if(next.length===songs.length)return res.status(404).json({error:'Canción no encontrada.'});await saveAllSongs(next);return res.status(200).json({ok:true,total:next.length});}
-        if(action==='list-events-admin'){const events=await getEventSummaries({includeHidden:true});return res.status(200).json({ok:true,events});}
+        if(action==='list-events-admin'){
+          const events=await getEventSummaries({includeHidden:true});
+          const eventsWithCover=await Promise.all(events.map(async e=>{
+            if(!e.coverPathname) return {...e,coverImageData:null};
+            try{
+              const result=await getPrivateBlob(e.coverPathname);
+              if(!result || result.statusCode!==200 || !result.stream) return {...e,coverImageData:null};
+              const chunks=[];
+              for await (const chunk of Readable.fromWeb(result.stream)) chunks.push(Buffer.from(chunk));
+              const contentType=result.blob?.contentType||'image/jpeg';
+              return {...e,coverImageData:`data:${contentType};base64,${Buffer.concat(chunks).toString('base64')}`};
+            }catch(err){console.error('No se pudo cargar portada para Admin:',err);return {...e,coverImageData:null};}
+          }));
+          return res.status(200).json({ok:true,events:eventsWithCover});
+        }
         if(action==='save-event'){
           const events=await getEvents();const incomingId=safeText(req.body?.event?.id,90);const existing=incomingId?events.find(e=>e.id===incomingId):null;let event=cleanEvent(req.body?.event||{},existing);
           if(!event.title)return res.status(400).json({error:'Escribe el nombre del evento.'}); if(!event.date)return res.status(400).json({error:'Selecciona fecha y hora.'});
@@ -111,11 +126,13 @@ export default async function handler(req, res) {
       }
       if(!pathname)return res.status(404).end('Not found');
       const result=await getPrivateBlob(pathname);
-      if(!result?.stream)return res.status(404).end('Not found');
-      const ab=await new Response(result.stream).arrayBuffer();
+      if(!result || result.statusCode!==200 || !result.stream)return res.status(404).end('Not found');
       res.setHeader('Content-Type',result.blob?.contentType||'image/jpeg');
-      res.setHeader('Cache-Control','private, max-age=300');
-      return res.status(200).end(Buffer.from(ab));
+      res.setHeader('X-Content-Type-Options','nosniff');
+      if(result.blob?.etag) res.setHeader('ETag',result.blob.etag);
+      res.setHeader('Cache-Control','private, no-cache');
+      Readable.fromWeb(result.stream).pipe(res);
+      return;
     }
 
     const [popup,canciones,eventos]=await Promise.all([kv.get('app:popup'),getAllSongs(),getEventSummaries()]);
