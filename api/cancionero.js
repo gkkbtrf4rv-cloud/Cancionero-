@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs } from '../lib/song-store.js';
-import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover } from '../lib/event-store.js';
+import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover, getPrivateBlob, getPhotoMeta } from '../lib/event-store.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
 function keepSpacing(value='', max=500) { return String(value ?? '').replace(/\r/g,'').slice(0,max); }
@@ -96,6 +96,28 @@ export default async function handler(req, res) {
 
     if(req.method!=='GET')return res.status(405).json({error:'Método no permitido'});
     const session=await requireApproved(req,res);if(!session)return;
+
+    // v30: las imágenes privadas se sirven por esta misma función autenticada.
+    // Esto evita depender de URLs firmadas en el navegador y mantiene las fotos privadas.
+    const asset=safeText(req.query?.asset,20);
+    if(asset==='cover' || asset==='photo'){
+      const eventId=safeText(req.query?.eventId,90); const event=await getEvent(eventId);
+      if(!event || event.visible===false)return res.status(404).end('Not found');
+      let pathname='';
+      if(asset==='cover') pathname=event.coverPathname||'';
+      else {
+        const photoId=safeText(req.query?.photoId,100); const meta=await getPhotoMeta(eventId,photoId);
+        pathname=(meta?.storage==='vercel-blob-private' && meta?.pathname)?meta.pathname:'';
+      }
+      if(!pathname)return res.status(404).end('Not found');
+      const result=await getPrivateBlob(pathname);
+      if(!result?.stream)return res.status(404).end('Not found');
+      const ab=await new Response(result.stream).arrayBuffer();
+      res.setHeader('Content-Type',result.blob?.contentType||'image/jpeg');
+      res.setHeader('Cache-Control','private, max-age=300');
+      return res.status(200).end(Buffer.from(ab));
+    }
+
     const [popup,canciones,eventos]=await Promise.all([kv.get('app:popup'),getAllSongs(),getEventSummaries()]);
     const version=mergedVersion(canciones,eventos.map(({commentCount,photoCount,...e})=>e));
     res.setHeader('Cache-Control','no-store');
