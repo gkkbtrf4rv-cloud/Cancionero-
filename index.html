@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#5c0e18">
+<meta name="theme-color" content="#090808">
+<meta name="color-scheme" content="dark">
 <title>Cancionero · Tuna de Derecho FES Acatlán</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon-192.png">
@@ -32,7 +33,7 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; background:#2a0509;}
+  html,body{margin:0; padding:0; background:#090808!important;}
   html{min-height:100%;overscroll-behavior-y:none;}
   body{
     background:
@@ -454,7 +455,7 @@
 
 
   /* Splash de inicio */
-  .splash-screen{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;background:radial-gradient(800px 480px at 50% 35%,#3a1717 0%,#181010 46%,#090808 100%);transition:opacity .5s ease,visibility .5s ease;overflow:hidden}
+  .splash-screen{position:fixed;inset:-2px;z-index:20000;display:flex;align-items:center;justify-content:center;background:radial-gradient(800px 480px at 50% 35%,#3a1717 0%,#181010 46%,#090808 100%);transition:opacity .5s ease,visibility .5s ease;overflow:hidden;min-height:calc(100vh + env(safe-area-inset-top) + env(safe-area-inset-bottom));background-color:#090808}
   .splash-screen::before,.splash-screen::after{content:'';position:absolute;width:260px;height:260px;border:1px solid rgba(213,173,90,.12);border-radius:50%;filter:blur(.2px)}.splash-screen::before{top:-120px;right:-90px}.splash-screen::after{bottom:-140px;left:-80px}
   .splash-screen.hide{opacity:0;visibility:hidden;pointer-events:none}.splash-inner{text-align:center;padding:30px;position:relative;z-index:1}.splash-emblem{width:128px;height:128px;margin:0 auto 22px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(213,173,90,.42);background:radial-gradient(circle at 50% 35%,rgba(124,28,40,.5),rgba(18,13,13,.92));box-shadow:0 18px 48px rgba(0,0,0,.45),inset 0 0 0 8px rgba(213,173,90,.035);animation:splashPop .8s ease both}.splash-logo{width:88px;height:88px;border-radius:18px;filter:drop-shadow(0 10px 22px rgba(0,0,0,.42))}.splash-kicker{font:700 10px/1 var(--font-mono);letter-spacing:.23em;text-transform:uppercase;color:var(--premium-gold);margin-bottom:10px}.splash-title{font-family:var(--font-display);font-size:32px;line-height:1.05;color:var(--premium-cream);margin:0 0 9px}.splash-rule{display:flex;align-items:center;gap:9px;justify-content:center;margin:14px auto;width:180px}.splash-rule::before,.splash-rule::after{content:'';height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(213,173,90,.58))}.splash-rule::after{background:linear-gradient(90deg,rgba(213,173,90,.58),transparent)}.splash-rule span{color:var(--premium-gold);font-size:12px}.splash-sub{font-family:var(--font-titulo);font-size:12px;letter-spacing:.08em;color:#cdbfa9;opacity:.92}@keyframes splashPop{from{opacity:0;transform:scale(.9) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
   /* Pop-up publicado por administración */
@@ -716,8 +717,8 @@ body.detail-open .premium-bottom-nav{display:none}
   select?.addEventListener('change',()=>applyTheme(select.value));
 })();
 
-// Splash: aparece al abrir la app, pero no en cada recarga de la misma sesión.
-(()=>{const splash=document.getElementById('splashScreen');if(!splash)return;if(sessionStorage.getItem('cancionero_splash_seen')){splash.remove();return;}sessionStorage.setItem('cancionero_splash_seen','1');setTimeout(()=>{splash.classList.add('hide');setTimeout(()=>splash.remove(),420)},1350);})();
+// Splash: se muestra en cada apertura/carga de la app.
+(()=>{const splash=document.getElementById('splashScreen');if(!splash)return;requestAnimationFrame(()=>requestAnimationFrame(()=>splash.classList.add('ready')));setTimeout(()=>{splash.classList.add('hide');setTimeout(()=>splash.remove(),520)},1450);})();
 let CANCIONES = [];
 let EVENTOS = [];
 let POPUP_ACTUAL = null;
