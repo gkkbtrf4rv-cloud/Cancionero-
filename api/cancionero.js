@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { Readable } from 'node:stream';
 import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
-import { getAllSongs, saveAllSongs } from '../lib/song-store.js';
+import { getAllSongs, saveAllSongs, saveSongCover, deleteSongCover, getSongCoverBlob } from '../lib/song-store.js';
 import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover, getPrivateBlob, getPhotoMeta } from '../lib/event-store.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
@@ -12,7 +12,7 @@ function cleanSong(song = {}, id = '') {
   const titulo = String(song.titulo || '').trim().slice(0, 120);
   const musica = String(song.musica || '').trim().slice(0, 800);
   const estrofas = Array.isArray(song.estrofas) ? song.estrofas.slice(0,80).map(st=>Array.isArray(st)?st.slice(0,40).map(cleanLine).filter(x=>x.acordes.trim()||x.texto.trim()):[]).filter(st=>st.length) : [];
-  return { id:id||String(song.id||`admin-${Date.now()}`), titulo, musica, estrofas, origin:String(song.origin||'admin')==='original'?'original':'admin' };
+  return { id:id||String(song.id||`admin-${Date.now()}`), titulo, musica, estrofas, origin:String(song.origin||'admin')==='original'?'original':'admin', coverPathname:String(song.coverPathname||'').slice(0,260), coverUpdatedAt:String(song.coverUpdatedAt||'').slice(0,50) };
 }
 function mergedVersion(songs, events) { return crypto.createHash('sha256').update(JSON.stringify({songs,events})).digest('hex').slice(0,16); }
 function safeText(v='',max=600){return String(v??'').trim().slice(0,max);}
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','list-events-admin','save-event','delete-event']);
+      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
         if(action==='set-popup'){
@@ -40,13 +40,23 @@ export default async function handler(req, res) {
         if(action==='clear-popup'){await kv.del('app:popup');return res.status(200).json({ok:true});}
         if(action==='get-popup-admin'){return res.status(200).json({ok:true,popup:(await kv.get('app:popup'))||null});}
         if(action==='list-songs'||action==='list-custom-songs'){const songs=await getAllSongs();return res.status(200).json({ok:true,songs,total:songs.length});}
+        if(action==='get-song-cover-admin'){
+          const songId=String(req.body?.songId||'').trim();const songs=await getAllSongs();const song=songs.find(x=>x.id===songId);
+          if(!song?.coverPathname)return res.status(200).json({ok:true,imageData:null});
+          const result=await getSongCoverBlob(song.coverPathname);if(!result||result.statusCode!==200||!result.stream)return res.status(200).json({ok:true,imageData:null});
+          const chunks=[];for await(const chunk of Readable.fromWeb(result.stream))chunks.push(Buffer.from(chunk));
+          const contentType=result.blob?.contentType||'image/jpeg';return res.status(200).json({ok:true,imageData:`data:${contentType};base64,${Buffer.concat(chunks).toString('base64')}`});
+        }
         if(action==='save-song'||action==='save-custom-song'){
           const songs=await getAllSongs(),incomingId=String(req.body?.song?.id||'').trim(),existing=incomingId?songs.find(s=>s.id===incomingId):null;
-          const song=cleanSong({...req.body?.song,origin:existing?.origin||'admin'},incomingId||`admin-${Date.now()}`);
+          let song=cleanSong({...req.body?.song,origin:existing?.origin||'admin',coverPathname:existing?.coverPathname||'',coverUpdatedAt:existing?.coverUpdatedAt||''},incomingId||`admin-${Date.now()}`);
           if(!song.titulo)return res.status(400).json({error:'Escribe el título de la canción.'}); if(!song.estrofas.length)return res.status(400).json({error:'Agrega al menos una línea de letra o acordes.'});
+          const coverImageData=String(req.body?.song?.coverImageData||'');
+          if(coverImageData){if(!coverImageData.startsWith('data:image/jpeg'))return res.status(400).json({error:'La portada debe enviarse como JPEG.'});if(coverImageData.length>1050000)return res.status(413).json({error:'La portada sigue siendo demasiado pesada.'});const cover=await saveSongCover(song.id,coverImageData,existing?.coverPathname||'');song={...song,coverPathname:cover.pathname,coverUpdatedAt:cover.updatedAt};}
+          else if(req.body?.song?.removeCover===true && existing?.coverPathname){await deleteSongCover(existing.coverPathname);song={...song,coverPathname:'',coverUpdatedAt:new Date().toISOString()};}
           const idx=songs.findIndex(s=>s.id===song.id);if(idx>=0)songs[idx]=song;else songs.push(song);const saved=await saveAllSongs(songs);return res.status(200).json({ok:true,song,total:saved.length});
         }
-        if(action==='delete-song'||action==='delete-custom-song'){const id=String(req.body?.id||'').trim(),songs=await getAllSongs(),next=songs.filter(s=>s.id!==id);if(next.length===songs.length)return res.status(404).json({error:'Canción no encontrada.'});await saveAllSongs(next);return res.status(200).json({ok:true,total:next.length});}
+        if(action==='delete-song'||action==='delete-custom-song'){const id=String(req.body?.id||'').trim(),songs=await getAllSongs(),found=songs.find(s=>s.id===id),next=songs.filter(s=>s.id!==id);if(next.length===songs.length)return res.status(404).json({error:'Canción no encontrada.'});if(found?.coverPathname)await deleteSongCover(found.coverPathname);await saveAllSongs(next);return res.status(200).json({ok:true,total:next.length});}
         if(action==='list-events-admin'){
           const events=await getEventSummaries({includeHidden:true});
           const eventsWithCover=await Promise.all(events.map(async e=>{
@@ -115,14 +125,15 @@ export default async function handler(req, res) {
     // v30: las imágenes privadas se sirven por esta misma función autenticada.
     // Esto evita depender de URLs firmadas en el navegador y mantiene las fotos privadas.
     const asset=safeText(req.query?.asset,20);
-    if(asset==='cover' || asset==='photo'){
-      const eventId=safeText(req.query?.eventId,90); const event=await getEvent(eventId);
-      if(!event || event.visible===false)return res.status(404).end('Not found');
+    if(asset==='cover' || asset==='photo' || asset==='song-cover'){
       let pathname='';
-      if(asset==='cover') pathname=event.coverPathname||'';
-      else {
-        const photoId=safeText(req.query?.photoId,100); const meta=await getPhotoMeta(eventId,photoId);
-        pathname=(meta?.storage==='vercel-blob-private' && meta?.pathname)?meta.pathname:'';
+      if(asset==='song-cover'){
+        const songId=safeText(req.query?.songId,120);const songs=await getAllSongs();const song=songs.find(s=>s.id===songId);pathname=song?.coverPathname||'';
+      }else{
+        const eventId=safeText(req.query?.eventId,90); const event=await getEvent(eventId);
+        if(!event || event.visible===false)return res.status(404).end('Not found');
+        if(asset==='cover') pathname=event.coverPathname||'';
+        else {const photoId=safeText(req.query?.photoId,100); const meta=await getPhotoMeta(eventId,photoId);pathname=(meta?.storage==='vercel-blob-private' && meta?.pathname)?meta.pathname:'';}
       }
       if(!pathname)return res.status(404).end('Not found');
       const result=await getPrivateBlob(pathname);
@@ -138,6 +149,7 @@ export default async function handler(req, res) {
     const [popup,canciones,eventos]=await Promise.all([kv.get('app:popup'),getAllSongs(),getEventSummaries()]);
     const version=mergedVersion(canciones,eventos.map(({commentCount,photoCount,...e})=>e));
     res.setHeader('Cache-Control','no-store');
-    return res.status(200).json({ok:true,version,canciones,eventos,popup:popup?.active?popup:null});
+    const cancionesClient=canciones.map(({coverPathname,...song})=>({...song,coverImageUrl:coverPathname?`/api/cancionero?asset=song-cover&songId=${encodeURIComponent(song.id)}&v=${encodeURIComponent(song.coverUpdatedAt||'1')}`:null}));
+    return res.status(200).json({ok:true,version,canciones:cancionesClient,eventos,popup:popup?.active?popup:null});
   } catch(err){console.error('Error en cancionero:',err);if(err?.message==='BLOB_UPLOAD_FAILED')return res.status(500).json({error:'No se pudo guardar la foto en Vercel Blob. Revisa que el Blob Store privado esté conectado a este proyecto.'});return res.status(500).json({error:'No se pudo procesar la solicitud.'});}
 }
