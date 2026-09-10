@@ -1039,6 +1039,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       const hero=document.querySelector('.event-hero');
       if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}
       $('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';
+      renderEventSetlist(d.event);
       renderEventComments(d.comments||[]);
       $('offlineEventNote').classList.toggle('show',offlineMode);
       $('commentsPanel').style.display=d.event.commentsEnabled===false?'none':'block';$('photosPanel').style.display=d.event.photosEnabled===false?'none':'block';
