@@ -189,7 +189,7 @@ $('btnPopupClear').onclick=async()=>{if(!confirm('¿Quitar el pop-up actual?'))r
 
 
 
-const eventMsg=$('eventMsg'),eventList=$('eventList');let allEvents=[],eventCoverImageData='',eventRemoveCover=false;
+const eventMsg=$('eventMsg'),eventList=$('eventList');let allEvents=[],eventCoverImageData='',eventRemoveCover=false,eventSetlistSelection=[];
 function resetEventEditor(){eventSetlistSelection=[];renderEventSetlistAdmin();['eventId','eventTitle','eventEndDate','eventLocation','eventDescription'].forEach(id=>$(id).value='');eventCoverImageData='';eventRemoveCover=false;$('eventCoverFile').value='';$('eventCoverPreview').style.display='none';$('eventCoverPreviewImg').src='';$('eventKind').value='Viaje';$('eventDate').value='';$('eventCountdown').checked=true;$('eventComments').checked=true;$('eventPhotos').checked=true;$('eventVisible').checked=true;$('eventMaxPhotos').value='5';$('btnEventSave').textContent='➕ Guardar evento';eventMsg.textContent='';}
 function localInput(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v).slice(0,16);const pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
 function renderEventSetlistAdmin(){
