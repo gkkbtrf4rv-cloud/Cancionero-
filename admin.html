@@ -229,7 +229,17 @@ function parseSongBody(raw=''){
   if(actual.length)estrofas.push(actual);
   return estrofas;
 }
-function songToText(song){return (song.estrofas||[]).map(st=>st.map(l=>l.acordes?`${l.acordes} | ${l.texto||''}`:(l.texto||'')).join('\n')).join('\n\n');}
+function songToText(song){
+  const estrofas=Array.isArray(song?.estrofas)?song.estrofas:[];
+  return estrofas.map(st=>{
+    const lineas=Array.isArray(st)?st:[st];
+    return lineas
+      .filter(l=>l && typeof l==='object')
+      .map(l=>l.acordes?`${l.acordes} | ${l.texto||''}`:(l.texto||''))
+      .filter(Boolean)
+      .join('\n');
+  }).filter(Boolean).join('\n\n');
+}
 function renderSongPreview(){
   const title=($('songTitle').value||'').trim()||'Vista previa';
   const music=($('songMusic').value||'').trim()||'Así se verá para los integrantes';
