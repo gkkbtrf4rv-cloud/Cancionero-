@@ -566,7 +566,7 @@ body.detail-open .premium-bottom-nav{display:none}
 @media(max-width:420px){.premium-welcome h2{font-size:27px}.featured-event,.featured-event-content{min-height:365px}.featured-title{font-size:31px}.event-hero{min-height:390px}.event-hero h2{font-size:33px}}
 
   .songs-tools{display:block;margin:0 0 14px}.premium-shortcuts{grid-template-columns:repeat(2,1fr)}
-  .favorites-zone{margin:22px 0 24px;padding:16px;border:1px solid rgba(213,173,90,.18);border-radius:18px;background:linear-gradient(145deg,rgba(42,24,24,.86),rgba(18,15,14,.94))}.favorites-zone .premium-section-title{margin:0 0 12px}.favorites-list{display:grid;gap:9px}.favorites-empty{padding:14px;border:1px dashed rgba(213,173,90,.2);border-radius:13px;color:#a99b8c;font-size:12px;text-align:center}.song-card{position:relative}.song-fav-btn{width:38px;height:38px;flex:0 0 38px;border:0;background:transparent;color:var(--premium-gold);font-size:25px;display:grid;place-items:center;cursor:pointer}.song-fav-btn.active{color:#e23d4e;text-shadow:0 0 15px rgba(226,61,78,.28)}.song-fav-btn:active{transform:scale(.92)}.song-premium-fav{width:42px;height:42px;border-radius:50%;border:1px solid rgba(228,200,116,.28);background:rgba(17,12,12,.8);color:var(--dorado-suave);font-size:24px;display:grid;place-items:center;cursor:pointer}.song-premium-fav.active{color:#ef4054;border-color:rgba(239,64,84,.42)}
+  .favorites-zone{display:none;margin:22px 0 24px;padding:16px;border:1px solid rgba(213,173,90,.18);border-radius:18px;background:linear-gradient(145deg,rgba(42,24,24,.86),rgba(18,15,14,.94))}#vista-lista.favorites-mode>*{display:none!important}#vista-lista.favorites-mode #favoritesZone{display:block!important;margin-top:8px}#vista-lista.favorites-mode{min-height:68vh}.favorites-page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.favorites-back{border:1px solid rgba(213,173,90,.25);background:#171313;color:var(--premium-gold);border-radius:999px;padding:9px 13px;font:700 12px var(--font-mono);cursor:pointer}.favorites-page-title{display:flex;align-items:center;gap:8px}.favorites-page-title h2{margin:0;font:700 24px var(--font-display);color:var(--marfil)}.favorites-zone .premium-section-title{margin:0 0 12px}.favorites-list{display:grid;gap:9px}.favorites-empty{padding:14px;border:1px dashed rgba(213,173,90,.2);border-radius:13px;color:#a99b8c;font-size:12px;text-align:center}.song-card{position:relative}.song-fav-btn{width:38px;height:38px;flex:0 0 38px;border:0;background:transparent;color:var(--premium-gold);font-size:25px;display:grid;place-items:center;cursor:pointer}.song-fav-btn.active{color:#e23d4e;text-shadow:0 0 15px rgba(226,61,78,.28)}.song-fav-btn:active{transform:scale(.92)}.song-premium-fav{width:42px;height:42px;border-radius:50%;border:1px solid rgba(228,200,116,.28);background:rgba(17,12,12,.8);color:var(--dorado-suave);font-size:24px;display:grid;place-items:center;cursor:pointer}.song-premium-fav.active{color:#ef4054;border-color:rgba(239,64,84,.42)}
   .event-setlist{display:grid;gap:8px}.event-setlist-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:11px;border:1px solid rgba(228,200,116,.16);background:rgba(255,255,255,.045);cursor:pointer}.event-setlist-item .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(201,162,39,.16);color:var(--dorado);font:800 11px var(--font-mono)}.event-setlist-item strong{flex:1;color:var(--marfil);font-size:14px}.event-setlist-item small{display:block;color:var(--dorado-suave);font:10px var(--font-mono);margin-top:2px}.event-setlist-item .go{color:var(--dorado);font-size:18px}
 </style>
   <link rel="preload" href="/logo-tuna.webp" as="image" type="image/webp">
@@ -602,7 +602,10 @@ body.detail-open .premium-bottom-nav{display:none}
       </div>
       <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
       <div class="favorites-zone" id="favoritesZone">
-        <div class="premium-section-title"><h2>♡ Favoritos</h2><span id="favoritesCount">0 guardadas</span></div>
+        <div class="favorites-page-head">
+          <div class="favorites-page-title"><h2>♡ Favoritos</h2><span id="favoritesCount">0 guardadas</span></div>
+          <button class="favorites-back" type="button" data-premium-nav="home">‹ Inicio</button>
+        </div>
         <div class="favorites-list" id="lista-favoritos"></div>
       </div>
       <div class="premium-section-title" id="songsAnchor"><h2>Canciones</h2><span id="premiumSongCount">Repertorio</span></div>
@@ -1021,10 +1024,17 @@ function premiumNavigate(target){
   const tools=document.getElementById('songsTools');
   if(target==='settings'){ document.getElementById('settingsPanel')?.classList.add('open'); document.querySelectorAll('.premium-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.premiumNav==='settings')); return; }
   document.getElementById('settingsPanel')?.classList.remove('open');
-  if(tools) tools.classList.add('open');
-  const map={home:'inicioPremium',songs:'songsAnchor',favorites:'favoritesZone',events:'eventsZone',past:'pastEventsZone'};
-  const el=document.getElementById(map[target]||'inicioPremium');
-  if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(target==='favorites'){
+    $vistaLista.classList.add('favorites-mode');
+    renderFavorites();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }else{
+    $vistaLista.classList.remove('favorites-mode');
+    if(tools) tools.classList.add('open');
+    const map={home:'inicioPremium',songs:'songsAnchor',events:'eventsZone',past:'pastEventsZone'};
+    const el=document.getElementById(map[target]||'inicioPremium');
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  }
   document.querySelectorAll('.premium-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.premiumNav===target || (target==='past'&&b.dataset.premiumNav==='events')));
   if(target==='songs') setTimeout(()=>document.getElementById('buscador')?.focus(),350);
 }
