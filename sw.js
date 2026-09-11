@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v49";
+const CACHE_NAME = "cancionero-tuna-derecho-v50";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 

@@ -1033,7 +1033,12 @@ function premiumNavigate(target){
     if(tools) tools.classList.add('open');
     const map={home:'inicioPremium',songs:'songsAnchor',events:'eventsZone',past:'pastEventsZone'};
     const el=document.getElementById(map[target]||'inicioPremium');
-    if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
+    if(el){
+      const header=document.querySelector('header.top');
+      const headerH=header ? header.getBoundingClientRect().height : 0;
+      const y=window.scrollY + el.getBoundingClientRect().top - headerH - 12;
+      window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+    }
   }
   document.querySelectorAll('.premium-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.premiumNav===target || (target==='past'&&b.dataset.premiumNav==='events')));
   if(target==='songs') setTimeout(()=>document.getElementById('buscador')?.focus(),350);
