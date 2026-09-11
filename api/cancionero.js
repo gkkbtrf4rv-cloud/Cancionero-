@@ -141,7 +141,7 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type',result.blob?.contentType||'image/jpeg');
       res.setHeader('X-Content-Type-Options','nosniff');
       if(result.blob?.etag) res.setHeader('ETag',result.blob.etag);
-      res.setHeader('Cache-Control','private, no-cache');
+      res.setHeader('Cache-Control','private, max-age=31536000, immutable');
       Readable.fromWeb(result.stream).pipe(res);
       return;
     }
