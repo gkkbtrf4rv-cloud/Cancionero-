@@ -131,7 +131,7 @@
   }
   .search-wrap input{
     width:100%;
-    padding:12px 40px 12px 14px;
+    padding:12px 78px 12px 14px;
     border-radius:12px;
     border: 1.5px solid var(--dorado);
     background: rgba(255,255,255,.06);
@@ -153,6 +153,26 @@
     color: var(--dorado);
     pointer-events:none;
   }
+  .search-clear{
+    position:absolute;
+    right:42px;
+    top:50%;
+    transform:translateY(-50%);
+    width:28px;
+    height:28px;
+    border:0;
+    border-radius:999px;
+    background:rgba(255,255,255,.10);
+    color:var(--marfil);
+    font:700 18px/1 system-ui,sans-serif;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .search-clear.visible{display:flex;}
+  .search-clear:active{transform:translateY(-50%) scale(.94);}
 
   .count-line{
     margin-top:8px;
@@ -588,6 +608,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <div class="songs-tools" id="songsTools">
         <div class="search-wrap" id="searchArea">
           <input id="buscador" type="text" inputmode="search" autocomplete="off" placeholder="Buscar canción por título…">
+          <button id="clearSearch" class="search-clear" type="button" aria-label="Borrar búsqueda" title="Borrar búsqueda">×</button>
           <span class="icon">🔍</span>
         </div>
         <div class="count-line" id="contador">— canciones</div>
@@ -732,6 +753,7 @@ const $listaEventos = document.getElementById('lista-eventos');
 const $listaEventosPasados = document.getElementById('lista-eventos-pasados');
 const $buscador      = document.getElementById('buscador');
 const $searchArea    = document.getElementById('searchArea');
+const $clearSearch   = document.getElementById('clearSearch');
 const $contador      = document.getElementById('contador');
 const $vacio         = document.getElementById('estado-vacio');
 const $vistaLista    = document.getElementById('vista-lista');
@@ -915,9 +937,11 @@ function mostrarDetalle(cancion, {pushHistory=true}={}){
   } else {
     $detLetra.innerHTML = '';
     cancion.estrofas.forEach(estrofa => {
+      if (!Array.isArray(estrofa)) return;
       const div = document.createElement('div');
       div.className = 'estrofa';
       estrofa.forEach(linea => {
+        if (!linea || typeof linea !== 'object') return;
         if (linea.acordes){
           const a = document.createElement('div');
           a.className = 'linea acordes';
@@ -978,7 +1002,18 @@ window.addEventListener('popstate', (event) => {
   cerrarDetalleSinHistorial();
 });
 
-$buscador.addEventListener('input', e => renderLista(e.target.value));
+function actualizarBotonBorrarBusqueda(){
+  $clearSearch?.classList.toggle('visible', Boolean($buscador?.value));
+}
+$buscador.addEventListener('input', e => { renderLista(e.target.value); actualizarBotonBorrarBusqueda(); });
+$clearSearch?.addEventListener('click',()=>{
+  $buscador.value='';
+  renderLista('');
+  actualizarBotonBorrarBusqueda();
+  $buscador.focus();
+});
+$buscador.addEventListener('search',()=>{ renderLista($buscador.value); actualizarBotonBorrarBusqueda(); });
+actualizarBotonBorrarBusqueda();
 $btnVolver.addEventListener('click', volverALista);
 
 function premiumNavigate(target){
