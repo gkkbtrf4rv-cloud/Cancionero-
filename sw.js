@@ -1,121 +1,99 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v52";
-const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
-const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+const CACHE_NAME = 'cancionero-tuna-derecho-v52';
+const META_CACHE = 'cancionero-notification-state-v1';
+const UPDATE_MARKER_URL = '/__cancionero_update_marker__';
+const STATIC_ASSETS = new Set(['/manifest.json', '/notifications.js', '/icon-192.png', '/icon-512.png', '/logo-tuna.webp']);
 
-self.addEventListener("install", (event) => {
+self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v52', { cache: 'no-store' });
-    if (fresh && fresh.ok) await cache.put('/', fresh.clone());
-    await Promise.allSettled([
-      cache.add(new Request('/manifest.json', { cache: 'reload' })),
-      cache.add(new Request('/icon-192.png', { cache: 'reload' })),
-      cache.add(new Request('/icon-512.png', { cache: 'reload' })),
-      cache.add(new Request('/logo-tuna.webp', { cache: 'reload' }))
-    ]);
+    await Promise.allSettled(['/', ...STATIC_ASSETS].map(async path => {
+      const response = await fetch(path, { cache: 'reload' });
+      if (response.ok && !response.redirected) await cache.put(path, response);
+    }));
+    await self.skipWaiting();
   })());
-  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    // Conservar avisos pendientes antes de retirar los shells anteriores.
+    const pending = await caches.match(UPDATE_MARKER_URL);
+    if (pending) await (await caches.open(META_CACHE)).put(UPDATE_MARKER_URL, pending);
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter(k => k.startsWith('cancionero-tuna-derecho-') && k !== CACHE_NAME).map(k => caches.delete(k)));
+    // No borrar portadas privadas ni recargar mientras se consulta una canción.
     await self.clients.claim();
-    // Fuerza a las ventanas abiertas a volver a cargar usando el shell v52.
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    await Promise.allSettled(windows.map((client) => client.navigate(client.url)));
   })());
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  if (url.pathname.startsWith('/api/')) return;
-
-  // El administrador es una página independiente. No debe recibir el shell de la app.
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   if (event.request.mode === 'navigate') {
-    if (url.pathname === '/admin.html' || url.pathname === '/admin') return;
-    event.respondWith(cacheFirstPage(event.request));
+    if (url.pathname === '/' || url.pathname === '/index.html') event.respondWith(homePage(event.request));
+    // /admin.html y otras rutas conservan sus propias respuestas.
     return;
   }
-  if (url.origin === self.location.origin) event.respondWith(cacheFirst(event.request));
+  if (STATIC_ASSETS.has(url.pathname)) event.respondWith(staticAsset(event.request));
 });
 
-async function cacheFirstPage(request) {
-  const cached = (await caches.match('/')) || (await caches.match(request));
-  if (cached) return cached;
+async function homePage(request) {
+  const cache = await caches.open(CACHE_NAME);
   try {
     const response = await fetch(request, { cache: 'no-store' });
-    if (response && response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put('/', response.clone());
-    }
+    if (response.ok && !response.redirected) await cache.put('/', response.clone());
     return response;
   } catch {
-    return new Response('Sin conexión y sin una versión guardada todavía.', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-    });
+    return await cache.match('/') || new Response('Sin conexión. Abre el cancionero con internet una vez para guardar una copia.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
 }
-
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
+async function staticAsset(request) {
+  const cache = await caches.open(CACHE_NAME), cached = await cache.match(request);
   if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response && response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    return new Response('Sin conexión.', { status: 503 });
-  }
+  const response = await fetch(request);
+  if (response.ok && !response.redirected) await cache.put(request, response.clone());
+  return response;
 }
-
-self.addEventListener("push", (event) => {
+function safeURL(value) {
+  try {
+    const url = new URL(value || '/', self.location.origin);
+    if (url.origin === self.location.origin && ['http:', 'https:'].includes(url.protocol)) return url.href;
+  } catch {}
+  return self.location.origin + '/';
+}
+self.addEventListener('push', event => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; }
-  catch { data = { title: "¡Aúpa Tuna!", body: event.data ? event.data.text() : "" }; }
-  const title = data.title || "¡Aúpa Tuna!";
-  const options = {
-    body: data.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
-    tag: data.kind === 'content-update' ? 'cancionero-update' : 'cancionero-tuna',
-    renotify: true,
-    data: { url: data.url || "/", kind: data.kind || null, version: data.version || null }
-  };
-
+  try { data = event.data?.json() || {}; } catch { data = { body: event.data?.text() || '' }; }
+  if (!data || typeof data !== 'object') data = {};
+  const update = data.kind === 'content-update' && typeof data.version === 'string';
   event.waitUntil((async () => {
-    if (data.kind === 'content-update' && data.version) {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(UPDATE_MARKER_URL, new Response(JSON.stringify({
-          version: data.version,
-          receivedAt: new Date().toISOString()
-        }), { headers: { 'Content-Type': 'application/json' } }));
-      } catch (err) {
-        console.warn('No se pudo guardar la marca de actualización:', err);
-      }
+    // Mostrar el aviso aunque falle el guardado local del marcador.
+    const shown = self.registration.showNotification(data.title || 'Cancionero de Tuna', {
+      body: data.body || 'Hay novedades en el cancionero.', icon: '/icon-192.png', badge: '/icon-192.png',
+      tag: update ? `cancionero-update-${data.version}` : undefined,
+      data: { url: safeURL(data.url), kind: data.kind || null, version: data.version || null }
+    });
+    if (update) {
+      await (async () => {
+        const cache = await caches.open(META_CACHE);
+        await cache.put(UPDATE_MARKER_URL, new Response(JSON.stringify({ version: data.version, receivedAt: new Date().toISOString() }), { headers: { 'Content-Type': 'application/json' } }));
+      })().catch(() => {});
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      windows.forEach(client => client.postMessage({ kind: 'content-update', version: data.version }));
     }
-    await self.registration.showNotification(title, options);
+    await shown;
   })());
 });
-
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
-  event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-    for (const client of clientList) {
-      if (client.url.startsWith(self.location.origin) && "focus" in client) {
-        client.navigate?.(target);
-        return client.focus();
-      }
+  const target = safeURL(event.notification.data?.url);
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find(client => new URL(client.url).origin === self.location.origin);
+    if (existing && 'navigate' in existing) {
+      const navigated = await existing.navigate(target);
+      if (navigated) return navigated.focus();
     }
-    return clients.openWindow ? clients.openWindow(target) : undefined;
-  }));
+    return self.clients.openWindow(target);
+  })());
 });

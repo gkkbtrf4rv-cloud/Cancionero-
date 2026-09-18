@@ -1,0 +1,71 @@
+{
+  "engine": "Chromium",
+  "mode": "mobile viewport and API simulation; not physical iOS/Android push delivery",
+  "results": [
+    {
+      "test": "Android activation requests permission from a tap; server confirms registration",
+      "status": "passed"
+    },
+    {
+      "test": "Server rejection does not show active; retry preserves browser subscription",
+      "status": "passed"
+    },
+    {
+      "test": "iPhone Safari shows installation instructions before unsupported API check",
+      "status": "passed"
+    },
+    {
+      "test": "iPad with desktop user agent shows installation guidance",
+      "status": "passed"
+    },
+    {
+      "test": "Installed iPhone flow enables registration",
+      "status": "passed"
+    },
+    {
+      "test": "Blocked permission gives settings instructions and no prompt",
+      "status": "passed"
+    },
+    {
+      "test": "Existing subscription resynchronizes without a permission prompt",
+      "status": "passed"
+    },
+    {
+      "test": "Changed VAPID key renews only after a tap",
+      "status": "passed"
+    },
+    {
+      "test": "Dismissed permission remains optional",
+      "status": "passed"
+    },
+    {
+      "test": "Pending account cannot subscribe",
+      "status": "passed"
+    },
+    {
+      "test": "Unsupported browser can still use song consultation",
+      "status": "passed"
+    },
+    {
+      "test": "Invalid server key stays recoverable",
+      "status": "passed"
+    },
+    {
+      "test": "Song search and reading at 320px",
+      "status": "passed"
+    },
+    {
+      "test": "Song search and reading at 390px",
+      "status": "passed"
+    },
+    {
+      "test": "Song search and reading at 412px",
+      "status": "passed"
+    },
+    {
+      "test": "Failed content sync does not mark the daily update complete",
+      "status": "passed"
+    }
+  ],
+  "total": 16
+}

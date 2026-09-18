@@ -681,7 +681,7 @@ body.detail-open .premium-bottom-nav{display:none}
   <div class="settings-sep"></div>
   <div class="theme-control"><label for="themeSelect">🎨 Apariencia</label><select id="themeSelect" class="theme-select"><option value="default">Predeterminado · vino</option><option value="dark">Modo oscuro</option><option value="light">Modo claro</option></select></div>
   <div id="syncStatus" class="notif-status" style="display:block">🔄 Comprobando versión…</div>
-  <div id="notifStatus" class="notif-status"></div>
+  <div id="notifStatus" class="notif-status" role="status" aria-live="polite"></div>
   <button id="btnNotificaciones" class="install-btn notif-btn" style="display:none;">🔔 Activar notificaciones</button>
   <button id="btnInstalar" class="install-btn" style="display:none;">⬇ Instalar app</button>
 </div>
@@ -1046,12 +1046,12 @@ function premiumNavigate(target){
 document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-nav]'); if(!b)return; e.preventDefault(); premiumNavigate(b.dataset.premiumNav);});
 
 </script>
+<script src="/notifications.js"></script>
 <script>
-  const VAPID_PUBLIC_KEY = 'BG_XtaN27KZYZIhyPha4zX0_Xdl_Q4QX2ARUtAGMXHOG4XbdSmfFf1WY7HQwnJtSoGewUNw61KhzP3B704kZejo';
   const $ = (id) => document.getElementById(id);
   const btnInstalar = $('btnInstalar'), btnNotificaciones = $('btnNotificaciones'), notifStatus = $('notifStatus');
   let eventoInstalacion = null, currentUser = null, cancioneroLoaded = false;
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const token = () => localStorage.getItem('cancionero_token');
   const settingsPanel = $('settingsPanel');
@@ -1060,8 +1060,6 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') settingsPanel.classList.remove('open'); });
 
   function statusNotif(text, visible=true){ notifStatus.textContent=text; notifStatus.style.display=visible?'block':'none'; }
-  function urlBase64ToUint8Array(base64String){ const padding='='.repeat((4-base64String.length%4)%4); const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/'); const raw=atob(base64); return Uint8Array.from([...raw].map(c=>c.charCodeAt(0))); }
-  function sameKey(sub){ try { const a=new Uint8Array(sub.options.applicationServerKey || []), b=urlBase64ToUint8Array(VAPID_PUBLIC_KEY); return a.length===b.length && a.every((v,i)=>v===b[i]); } catch { return false; } }
   function authHeaders(){ return token()?{Authorization:`Bearer ${token()}`}:{ }; }
   function deviceInfo(){ return { userAgent:navigator.userAgent, platform:navigator.userAgentData?.platform || navigator.platform || '', installed:isStandalone() }; }
 
@@ -1220,21 +1218,11 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   }
 
   if ('serviceWorker' in navigator) {
-    let recargaPorSW = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (recargaPorSW || sessionStorage.getItem('sw_recargado') === '1') return;
-      recargaPorSW = true;
-      sessionStorage.setItem('sw_recargado', '1');
-      location.reload();
-    });
-    window.addEventListener('load', async () => {
-      try {
-        const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-        // Revisar solo el archivo pequeño del Service Worker en cada apertura.
-        // El contenido privado del cancionero sigue respetando la actualización diaria.
-        reg.update().catch(()=>{});
-        setTimeout(() => sessionStorage.removeItem('sw_recargado'), 5000);
-      } catch (err) { console.warn('No se pudo registrar el Service Worker:', err); }
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(reg => reg.update().catch(() => {}))
+      .catch(err => console.warn('No se pudo registrar el Service Worker:', err.name));
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data?.kind === 'content-update') actualizarSiHayAvisoPendiente(event.data.version);
     });
   }
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); eventoInstalacion=e; btnInstalar.style.display='block'; });
@@ -1250,7 +1238,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{await desconectarAvisos();try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
@@ -1372,7 +1360,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
 
   async function buscarActualizacion(){
     if(!currentUser?.approved || !token() || !navigator.onLine || sincronizando) return;
-    try { await cargarCancionero({forzar:true}); } catch(err) { if(err.authError){ await restoreSession(); await aplicarAcceso(); } }
+    try { return await cargarCancionero({forzar:true}); } catch(err) { if(err.authError){ await restoreSession(); await aplicarAcceso(); } return null; }
   }
 
   async function aplicarAcceso(){
@@ -1384,35 +1372,14 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     catch(err){ txt.textContent='No se pudo validar o cargar tu acceso.'; state.textContent='⚠️ '+(err.message||'Error'); retry.style.display='block'; }
   }
   $('btnAccessLogin').onclick=()=>authModal.classList.add('open');
-  $('btnAccessRetry').onclick=async()=>{await restoreSession();await aplicarAcceso();};
+  $('btnAccessRetry').onclick=async()=>{await restoreSession();await aplicarAcceso();await actualizarNotificaciones();};
 
-  const notifSoportadas=('Notification'in window)&&('serviceWorker'in navigator)&&('PushManager'in window);
-  async function syncSubscription(sub){ const r=await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({subscription:sub,device:deviceInfo()})}); const d=await r.json().catch(()=>({})); if(!r.ok)throw new Error(d.error||'No se pudo registrar el dispositivo'); return d; }
-  async function actualizarNotificaciones(){
-    btnNotificaciones.style.display='none';
-    if(!notifSoportadas){statusNotif('Este navegador no admite notificaciones push.');return;}
-    if(!currentUser||!currentUser.approved){btnNotificaciones.textContent=currentUser?'⏳ Esperando autorización':'👤 Inicia sesión para activar avisos';btnNotificaciones.style.display='block';statusNotif(currentUser?'Tu cuenta debe ser autorizada antes de activar avisos.':'Inicia sesión para asociar las notificaciones con tu mote.');return;}
-    if(isIOS&&!isStandalone()){btnNotificaciones.textContent='📲 Instalar en iPhone para recibir avisos';btnNotificaciones.style.display='block';statusNotif('En iPhone: Safari → Compartir → Añadir a pantalla de inicio. Después abre el Cancionero desde su icono.');return;}
-    if(Notification.permission==='denied'){statusNotif('⚠️ Las notificaciones están bloqueadas en los ajustes del navegador/dispositivo.');return;}
-    try{
-      const reg=await navigator.serviceWorker.ready; let sub=await reg.pushManager.getSubscription();
-      if(sub && !sameKey(sub)){await sub.unsubscribe();sub=null;}
-      if(sub){await syncSubscription(sub);statusNotif(`✅ Notificaciones activadas para ${currentUser.mote}.`);return;}
-      statusNotif('Las notificaciones aún no están activadas.');btnNotificaciones.textContent='🔔 Activar notificaciones';btnNotificaciones.style.display='block';
-    }catch(err){statusNotif(`⚠️ ${err.message||'No se pudo comprobar la suscripción.'}`);btnNotificaciones.style.display='block';}
-  }
-  btnNotificaciones.addEventListener('click',async()=>{
-    if(!currentUser||!currentUser.approved){authModal.classList.add('open');return;}
-    if(isIOS&&!isStandalone()){alert('En iPhone: abre esta página en Safari, toca Compartir, elige “Añadir a pantalla de inicio”, abre el Cancionero desde el nuevo icono y vuelve a tocar Activar notificaciones.');return;}
-    try{
-      const permiso=await Notification.requestPermission(); if(permiso!=='granted'){statusNotif('No se concedió permiso para notificaciones.');return;}
-      const reg=await navigator.serviceWorker.ready; let sub=await reg.pushManager.getSubscription();
-      if(sub&&!sameKey(sub)){await sub.unsubscribe();sub=null;}
-      if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-      await syncSubscription(sub); btnNotificaciones.style.display='none';statusNotif(`✅ Notificaciones activadas para ${currentUser.mote}.`);
-    }catch(err){console.warn(err);statusNotif(`❌ ${err.message||'No se pudo activar notificaciones.'}`);}
+  btnNotificaciones.addEventListener('click', activarNotificaciones);
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    await actualizarSiHayAvisoPendiente();
+    await actualizarNotificaciones();
   });
-
   // Actualización automática: como máximo una vez por día.
   // Si la app está abierta a medianoche, intenta actualizar en ese momento.
   // Si estaba cerrada, lo hace la primera vez que se abre ese día.
@@ -1425,8 +1392,8 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         const reg=await navigator.serviceWorker.getRegistration();
         if(reg) await reg.update();
       }
-      await buscarActualizacion();
-      marcarActualizadoHoy();
+      const resultado = await buscarActualizacion();
+      if (resultado && !resultado.offline) marcarActualizadoHoy();
     }catch(err){
       console.warn('No se pudo completar la actualización diaria:',err);
     }
