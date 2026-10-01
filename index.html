@@ -712,6 +712,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <label>Correo electrónico<input id="loginEmail" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label>
       <label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>
       <button class="auth-submit" type="submit">Entrar</button>
+      <button class="account-btn" type="button" id="btnRecuperarClave">¿Olvidaste tu contraseña?</button>
       <button class="account-btn" type="button" id="btnReenviarVerificacion">Reenviar verificación</button>
     </form>
     <form id="formRegistro" class="auth-form" style="display:none">
@@ -1249,6 +1250,14 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   async function authRequest(url,payload){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json().catch(()=>({})); if(!r.ok){ const extra=d.detail?` — ${d.detail}`:''; throw new Error((d.error||'Ocurrió un error')+extra); } return d; }
   formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
+  $('btnRecuperarClave').addEventListener('click',async()=>{
+    const emailInput=$('loginEmail'), button=$('btnRecuperarClave');
+    if(!emailInput.reportValidity())return;
+    button.disabled=true;authMsg.className='auth-msg';authMsg.textContent='Solicitando enlace…';
+    try{const d=await authRequest('/api/login',{action:'request-reset',email:emailInput.value.trim()});authMsg.className='auth-msg ok';authMsg.textContent=d.message;}
+    catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}
+    finally{button.disabled=false;}
+  });
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
