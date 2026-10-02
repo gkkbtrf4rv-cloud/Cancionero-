@@ -4,10 +4,17 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@vercel/blob": "^2.6.1",
+    "@vercel/blob": "2.8.0",
     "@vercel/functions": "^3.9.9",
     "@vercel/kv": "^2.0.0",
     "nodemailer": "^6.10.1",
     "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "scripts": {
+    "build:blob": "esbuild admin-assets/blob-client-entry.js --bundle --platform=browser --format=esm --minify --legal-comments=eof --outfile=admin-assets/blob-client.mjs",
+    "test": "node --test tests/*.test.js"
   }
 }

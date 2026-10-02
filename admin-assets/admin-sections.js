@@ -55,7 +55,7 @@
     '<div class="row"><div><label>Título del libro</label><input id="libraryTitle" maxlength="160" placeholder="Ej. Historia de la Tuna"></div>' +
     '<div><label>Autor (opcional)</label><input id="libraryAuthor" maxlength="120" placeholder="Nombre del autor"></div></div>' +
     '<div class="library-drop"><label>Archivo</label><input id="libraryFile" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown">' +
-    '<p class="hint">PDF, TXT o MD. Límite inicial: 3 MB. Si el PDF es un escaneo sin texto, necesitará OCR.</p></div>' +
+    '<p class="hint">PDF, TXT o MD. Hasta 100 MB por libro. La carga es privada y muestra su progreso. Si el PDF es un escaneo sin texto, necesitará OCR.</p></div>' +
     '<div class="actions"><button type="button" id="btnLibraryUpload">➕ Agregar a Biblioteca</button>' +
     '<button type="button" class="secondary" id="btnLibraryList">Actualizar lista</button>' +
     '<button type="button" class="secondary" id="btnLibraryAI">✨ Probar asistente</button></div>' +
@@ -128,18 +128,36 @@
 
   byId('btnLibraryAI').onclick = () => location.href = '/ia.html';
 
-  async function extractPdfPages(file) {
+  async function extractPdfPages(file, progress) {
     const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
     pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
     const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-    const pages = [];
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-      const page = await pdf.getPage(pageNumber);
-      const content = await page.getTextContent();
-      const text = content.items.map(item => item.str || '').join(' ').replace(/\\s+/g, ' ').trim();
-      pages.push({ page: pageNumber, text });
+    try {
+      if (pdf.numPages > 10000) throw new Error('El PDF supera 10 000 páginas. Divide el libro en volúmenes.');
+      const chunks = []; let characters = 0;
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        progress('Leyendo página ' + pageNumber + ' de ' + pdf.numPages + '…');
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const text = content.items.map(item => item.str || '').join(' ').replace(/\s+/g, ' ').trim();
+        characters += text.length;
+        if (characters > 9000000) throw new Error('El texto es demasiado extenso. Divide el libro en volúmenes.');
+        chunks.push(...splitBookText(text, pageNumber));
+        page.cleanup();
+      }
+      return chunks;
+    } finally { await pdf.destroy(); }
+  }
+
+  function splitBookText(text, page = null) {
+    const source = String(text || '').trim();
+    const chunks = [];
+    for (let start = 0, part = 1; start < source.length; start += 1980, part++) {
+      const body = source.slice(start, start + 2200).trim();
+      if (body) chunks.push({text:body,page,part});
+      if (start + 2200 >= source.length) break;
     }
-    return pages;
+    return chunks;
   }
 
   const fileAsDataUrl = file => new Promise((resolve, reject) => {
@@ -219,9 +237,9 @@
       msg.textContent = '❌ Selecciona un PDF, TXT o MD.';
       return;
     }
-    if (file.size > 3000000) {
+    if (file.size > 100 * 1024 * 1024) {
       msg.className = 'msg err';
-      msg.textContent = '❌ El archivo supera 3 MB en esta primera versión.';
+      msg.textContent = '❌ El archivo supera 100 MB.';
       return;
     }
 
@@ -230,19 +248,29 @@
     msg.className = 'msg';
     msg.textContent = 'Leyendo, subiendo e indexando el libro…';
 
+    let uploadId = null, finishing = false;
     try {
-      const isPdf = file.type === 'application/pdf' || /\\.pdf$/i.test(file.name);
-      const pages = isPdf ? await extractPdfPages(file) : [];
-      const text = isPdf ? '' : await file.text();
-      const data = await libraryPost({
-        action: 'upload',
-        title,
-        author: byId('libraryAuthor').value.trim(),
-        filename: file.name,
-        fileData: await fileAsDataUrl(file),
-        pages,
-        text
-      });
+      const password = byId('libraryPassword').value.trim();
+      if (!password) throw new Error('Escribe la contraseña de administrador.');
+      const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+      if (!isPdf && !/\.(txt|md)$/i.test(file.name)) throw new Error('Solo PDF, TXT o MD.');
+      const mimeType = isPdf ? 'application/pdf' : /\.md$/i.test(file.name) ? 'text/markdown' : 'text/plain';
+      const progress = message => { msg.textContent = message; };
+      // Verify administrator credentials before reading a large book.
+      await libraryPost({action:'library-list'});
+      const chunks = isPdf ? await extractPdfPages(file, progress) : splitBookText(await file.text());
+      if (!chunks.length) throw new Error('No pude extraer texto. Si el PDF es un escaneo, necesita OCR antes de subirlo.');
+      const index = new Blob([JSON.stringify(chunks)], {type:'application/json'});
+      if (index.size > 16 * 1024 * 1024 || chunks.length > 15000) throw new Error('El texto es demasiado extenso. Divide el libro en volúmenes.');
+      const ticket = await libraryPost({action:'library-upload-start',title,author:byId('libraryAuthor').value.trim(),filename:file.name,size:file.size,mimeType});
+      uploadId = ticket.id;
+      const {put} = await import('/admin-assets/blob-client.mjs');
+      const options = (token, type, label) => ({access:'private',token,contentType:type,multipart:true,onUploadProgress:({percentage})=>progress(label + ' ' + Math.round(percentage) + '%…')});
+      await put(ticket.originalPath, file, options(ticket.originalToken, mimeType, 'Subiendo libro'));
+      await put(ticket.chunksPath, index, options(ticket.indexToken, 'application/json', 'Preparando contenido para la IA'));
+      progress('Verificando y registrando el libro…');
+      finishing = true;
+      const data = await libraryPost({action:'library-upload-finish',id:ticket.id});
       msg.className = 'msg ok';
       msg.textContent = '✅ “' + data.book.title + '” agregado con ' + data.book.chunks + ' fragmentos' +
         (data.book.pages ? ' y ' + data.book.pages + ' páginas detectadas.' : '.');
@@ -251,6 +279,7 @@
       byId('libraryFile').value = '';
       await loadBooks();
     } catch (err) {
+      if (uploadId && !finishing) await libraryPost({action:'library-upload-abort',id:uploadId}).catch(()=>{});
       msg.className = 'msg err';
       msg.textContent = '❌ ' + err.message;
     } finally {

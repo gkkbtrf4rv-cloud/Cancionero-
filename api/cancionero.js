@@ -4,6 +4,7 @@ import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs, saveSongCover, deleteSongCover, getSongCoverBlob } from '../lib/song-store.js';
 import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover, getPrivateBlob, getPhotoMeta } from '../lib/event-store.js';
+import { handleLibraryUpload } from '../lib/library-upload.js';
 import { handleLibraryAction } from '../lib/library-actions.js';
 import { getPermission, permissionMetadata, getPermissionBlob, handlePermissionAdmin } from '../lib/permission-store.js';
 import { handleAiAction } from '../lib/ai-actions.js';
@@ -31,11 +32,12 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','list','upload','delete']);
+      const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','library-upload-start','library-upload-finish','library-upload-abort','list','upload','delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
         if(action==='permission-admin' || action==='permission-upload') return handlePermissionAdmin(req,res);
         if(['list','upload','delete'].includes(action)){req.body.action='library-'+action;return handleLibraryAction(req,res);}
+        if(['library-upload-start','library-upload-finish','library-upload-abort'].includes(action)) return await handleLibraryUpload(req,res);
         if(action.startsWith('library-')) return handleLibraryAction(req,res);
         if(action==='set-popup'){
           const imageData=String(req.body?.imageData||''),title=safeText(req.body?.title,80),body=safeText(req.body?.body,300);
