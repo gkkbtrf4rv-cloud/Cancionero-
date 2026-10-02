@@ -115,7 +115,7 @@
     const password = byId('libraryPassword').value.trim();
     if (!password) throw new Error('Escribe la contraseña de administrador.');
 
-    const response = await fetch('/api/library', {
+    const response = await fetch('/api/cancionero', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ password, ...payload })
