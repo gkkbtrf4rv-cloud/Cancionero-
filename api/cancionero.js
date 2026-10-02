@@ -5,6 +5,7 @@ import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs, saveSongCover, deleteSongCover, getSongCoverBlob } from '../lib/song-store.js';
 import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover, getPrivateBlob, getPhotoMeta } from '../lib/event-store.js';
 import { handleLibraryAction } from '../lib/library-actions.js';
+import { getPermission, permissionMetadata, getPermissionBlob, handlePermissionAdmin } from '../lib/permission-store.js';
 import { handleAiAction } from '../lib/ai-actions.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
@@ -30,9 +31,10 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','list','upload','delete']);
+      const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','list','upload','delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
+        if(action==='permission-admin' || action==='permission-upload') return handlePermissionAdmin(req,res);
         if(['list','upload','delete'].includes(action)){req.body.action='library-'+action;return handleLibraryAction(req,res);}
         if(action.startsWith('library-')) return handleLibraryAction(req,res);
         if(action==='set-popup'){
@@ -131,6 +133,22 @@ export default async function handler(req, res) {
     // v30: las imágenes privadas se sirven por esta misma función autenticada.
     // Esto evita depender de URLs firmadas en el navegador y mantiene las fotos privadas.
     const asset=safeText(req.query?.asset,20);
+    if(asset==='permission'){
+      const doc=await getPermission();
+      if(!doc || (req.query?.v && req.query.v!==doc.version)) return res.status(404).json({error:'Permiso no disponible. Actualiza el Cancionero.'});
+      const result=await getPermissionBlob(doc);
+      if(!result || result.statusCode!==200 || !result.stream) return res.status(404).end('Not found');
+      res.setHeader('Content-Type',doc.mimeType);
+      res.setHeader('Content-Disposition','inline');
+      res.setHeader('X-Content-Type-Options','nosniff');
+      res.setHeader('Cache-Control','private, no-store');
+      Readable.fromWeb(result.stream).pipe(res);
+      return;
+    }
+    if(req.query?.action==='permission'){
+      res.setHeader('Cache-Control','no-store');
+      return res.status(200).json({ok:true,permission:permissionMetadata(await getPermission())});
+    }
     if(asset==='cover' || asset==='photo' || asset==='song-cover'){
       let pathname='';
       if(asset==='song-cover'){
@@ -152,10 +170,10 @@ export default async function handler(req, res) {
       return;
     }
 
-    const [popup,canciones,eventos]=await Promise.all([kv.get('app:popup'),getAllSongs(),getEventSummaries()]);
+    const [popup,canciones,eventos,permissionDoc]=await Promise.all([kv.get('app:popup'),getAllSongs(),getEventSummaries(),getPermission()]);
     const version=mergedVersion(canciones,eventos.map(({commentCount,photoCount,...e})=>e));
     res.setHeader('Cache-Control','no-store');
     const cancionesClient=canciones.map(({coverPathname,...song})=>({...song,coverImageUrl:coverPathname?`/api/cancionero?asset=song-cover&songId=${encodeURIComponent(song.id)}&v=${encodeURIComponent(song.coverUpdatedAt||'1')}`:null}));
-    return res.status(200).json({ok:true,version,canciones:cancionesClient,eventos,popup:popup?.active?popup:null});
+    return res.status(200).json({ok:true,version,canciones:cancionesClient,eventos,permission:permissionMetadata(permissionDoc),popup:popup?.active?popup:null});
   } catch(err){console.error('Error en cancionero:',err);if(err?.message==='BLOB_UPLOAD_FAILED')return res.status(500).json({error:'No se pudo guardar la foto en Vercel Blob. Revisa que el Blob Store privado esté conectado a este proyecto.'});return res.status(500).json({error:'No se pudo procesar la solicitud.'});}
 }

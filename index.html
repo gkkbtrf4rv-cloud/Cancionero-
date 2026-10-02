@@ -595,6 +595,8 @@ body.detail-open .premium-bottom-nav{display:none}
         <p>Tuna de Derecho · FES Acatlán · música, tradición y memoria.</p>
       </div>
       <div class="premium-shortcuts">
+        <button class="premium-shortcut primary" type="button" onclick="location.href='/ia.html'"><span class="shortcut-icon">📚</span><strong>Biblioteca Tuna · IA</strong><small>Pregunta sobre nuestra tradición</small></button>
+        <button class="premium-shortcut primary" type="button" id="btnPermission"><span class="shortcut-icon">📄</span><strong>Permiso de ensayo</strong><small id="permissionStatus">Autorización · FES Acatlán</small></button>
         <button class="premium-shortcut primary" type="button" data-premium-nav="songs"><span class="shortcut-icon">♫</span><strong>Repertorio</strong><small>Todas las canciones</small></button>
         <button class="premium-shortcut" type="button" data-premium-nav="favorites"><span class="shortcut-icon">♡</span><strong>Favoritos</strong><small>Tus canciones guardadas</small></button>
         <button class="premium-shortcut" type="button" data-premium-nav="events"><span class="shortcut-icon">▣</span><strong>Eventos</strong><small>Viajes y presentaciones</small></button>
@@ -1250,7 +1252,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
 
   async function authRequest(url,payload){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json().catch(()=>({})); if(!r.ok){ const extra=d.detail?` — ${d.detail}`:''; throw new Error((d.error||'Ocurrió un error')+extra); } return d; }
   formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
+  formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnRecuperarClave').addEventListener('click',async()=>{
     const emailInput=$('loginEmail'), button=$('btnRecuperarClave');
     if(!emailInput.reportValidity())return;
@@ -1260,7 +1262,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     finally{button.disabled=false;}
   });
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
@@ -1304,13 +1306,14 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     try{
       const r=await fetch('/api/me',{headers:authHeaders(),cache:'no-store'});
       if(r.status===401){
-        localStorage.removeItem('cancionero_token');
+        await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');
         localStorage.removeItem(USER_CACHE_KEY);
         currentUser=null;
       } else if(!r.ok) {
         throw new Error('Servidor no disponible');
       } else {
         currentUser=(await r.json()).user;
+        if(!currentUser?.approved) await window.clearRehearsalPermission?.();
         guardarUsuarioOffline(currentUser);
       }
     }catch(err){
@@ -1353,6 +1356,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       EVENTOS=Array.isArray(d.eventos)?d.eventos:[];
       cancioneroLoaded=true;
       guardarCancioneroOffline(d);
+      window.setRehearsalPermission?.(d.permission);
       ultimaSincronizacion=Date.now();
       renderLista($buscador?.value||'');
       renderEventos();
@@ -1367,6 +1371,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       if(offline && Array.isArray(offline.canciones) && offline.canciones.length){
         CANCIONES=offline.canciones;
         EVENTOS=Array.isArray(offline.eventos)?offline.eventos:[];
+        window.setRehearsalPermission?.(offline.permission);
         cancioneroLoaded=true;
         renderLista($buscador?.value||'');
         renderEventos();
@@ -1482,6 +1487,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     await actualizarNotificaciones();
   })();
 </script>
+<script src="/permission.js"></script>
 </body>
 </html>
 <style>
