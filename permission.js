@@ -20,7 +20,7 @@
   window.clearRehearsalPermission = async () => {
     generation++; doc = null; release(); if(modal.open) modal.close();
     status.textContent = 'Autorización · FES Acatlán';
-    if ('caches' in window) await Promise.all((await caches.keys()).filter(k => k.startsWith('cancionero-permission-v1-')).map(k => caches.delete(k)));
+    if ('caches' in window) { try { await Promise.all((await caches.keys()).filter(k => k.startsWith('cancionero-permission-v1-')).map(k => caches.delete(k))); } catch {} }
   };
   async function documentBlob() {
     if(!userKey() || !doc) throw new Error('Inicia sesión con una cuenta autorizada.');
@@ -39,19 +39,20 @@
       } catch { cache = null; } }
     }
     const blob = await response.blob();
-    if(epoch !== generation || userKey() !== owner) { if(cache) await caches.delete(name); throw new Error('La sesión cambió.'); }
+    if(epoch !== generation || userKey() !== owner) { if(cache && doc?.url !== target) await cache.delete(target).catch(() => {}); throw new Error('La sesión cambió.'); }
     status.textContent = cache ? 'Disponible sin conexión' : 'Disponible · requiere conexión';
     return blob;
   }
   window.setRehearsalPermission = async value => {
+    if(doc?.version !== value?.version && objectUrl) release();
     generation++; doc = value || null;
     if(!doc) {
       release(); status.textContent = 'Pendiente de subir en administración';
-      if('caches' in window && userKey()) await caches.delete(cacheName());
+      if('caches' in window && userKey()) await caches.delete(cacheName()).catch(() => {});
       return;
     }
     status.textContent = 'Guardando para usar sin conexión…';
-    try { await documentBlob(); } catch { status.textContent = navigator.onLine ? 'Toca para abrir el permiso' : 'Sin copia offline · conecta para descargar'; }
+    try { await documentBlob(); } catch { if(doc?.version !== value?.version) return; status.textContent = navigator.onLine ? 'Toca para abrir el permiso' : 'Sin copia offline · conecta para descargar'; }
   };
   document.getElementById('btnPermission').onclick = async () => {
     if(!userKey()) { document.getElementById('authModal').classList.add('open'); return; }
