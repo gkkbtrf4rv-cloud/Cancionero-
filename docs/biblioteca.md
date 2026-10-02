@@ -8,4 +8,4 @@ El administrador sigue subiendo PDF con texto (OCR para escaneos), TXT o MD de h
 
 Validación: catálogo y lectura sin sesión (401), cuenta pendiente (403), ticket inválido/vencido/otro libro (401), sesión revocada (401), libro eliminado (404), rango parcial (206), rango inválido (416), búsqueda sin clave OpenAI y sin escrituras de cuota.
 
-Integrantes recupera el botón Actualizar usuarios (su ausencia detenía la inicialización del administrador), suma Actualizar dispositivos y conserva contraseña y mensajes visibles al cambiar de sección.
+Integrantes recupera el botón Actualizar usuarios (la tarjeta Acceso al cancionero se estaba clasificando incorrectamente como Canciones), suma Actualizar dispositivos y conserva contraseña y mensajes visibles al cambiar de sección.
