@@ -42,6 +42,7 @@ table{border-collapse:separate;border-spacing:0}th{color:var(--admin-gold-soft);
 
 .song-cover-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.song-cover-preview{display:none;margin:10px 0 14px;width:180px;aspect-ratio:16/10;border:1px solid rgba(228,200,116,.3);border-radius:14px;overflow:hidden;background:#140d0e}.song-cover-preview img{width:100%;height:100%;object-fit:cover;display:block}.song-item{align-items:center}.song-item-thumb{width:58px;height:58px;border-radius:10px;overflow:hidden;border:1px solid rgba(228,200,116,.18);background:linear-gradient(145deg,#2a1719,#120e0f);display:grid;place-items:center;color:#d5ad5a;font-size:22px;flex:0 0 auto}.song-item-main{display:flex;gap:10px;align-items:center;min-width:0;flex:1}
 </style>
+<link rel="stylesheet" href="/admin-assets/admin-sections.css">
 </head>
 <body><div id="adminSplash" class="admin-splash"><div class="admin-splash-inner"><div class="admin-splash-emblem"><img src="/icon-192.png" alt="Tuna de Derecho"></div><div class="admin-splash-kicker">Tuna de Derecho · FES Acatlán</div><h1 class="admin-splash-title">Administración</h1><div class="admin-splash-rule"><span>✦</span></div><div class="admin-splash-sub">Cancionero de Tuna · Área privada</div></div></div><div class="wrap">
 <div class="admin-hero"><div class="admin-kicker">Tuna de Derecho · FES Acatlán</div><h1>Panel de administración</h1><p>Gestiona el cancionero, eventos, accesos, avisos y contenido de los integrantes desde un solo lugar.</p><div class="admin-badge">✦ Área privada de administración</div></div>
@@ -276,4 +277,5 @@ $('formNotif').addEventListener('submit',async e=>{e.preventDefault();$('btnEnvi
 
 // v41 · Splash del administrador
 (()=>{const splash=document.getElementById('adminSplash');if(!splash)return;setTimeout(()=>{splash.classList.add('hide');setTimeout(()=>splash.remove(),560)},1450);})();
-</script></body></html>
+</script><script src="/admin-assets/admin-sections.js"></script>
+</body></html>
