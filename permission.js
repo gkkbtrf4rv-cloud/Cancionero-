@@ -35,7 +35,10 @@
       }
       if(epoch !== generation || userKey() !== owner) throw new Error('La sesión cambió.');
       if(cache) { try { await cache.put(target,response.clone());
-        for(const key of await cache.keys()) if(key.url !== new URL(target,location.origin).href) await cache.delete(key);
+        for(const key of await cache.keys()) {
+          if(epoch !== generation || userKey() !== owner) break;
+          if(key.url !== new URL(target,location.origin).href) await cache.delete(key);
+        }
       } catch { cache = null; } }
     }
     const blob = await response.blob();
