@@ -4,6 +4,8 @@ import { getSessionUser } from '../lib/auth.js';
 import { kv } from '@vercel/kv';
 import { getAllSongs, saveAllSongs, saveSongCover, deleteSongCover, getSongCoverBlob } from '../lib/song-store.js';
 import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComments, addComment, getPhotoIndex, addPhoto, getPhotoPage, deleteOwnPhoto, deleteEventData, saveEventCover, deleteEventCover, getPrivateBlob, getPhotoMeta } from '../lib/event-store.js';
+import { handleLibraryAction } from '../lib/library-actions.js';
+import { handleAiAction } from '../lib/ai-actions.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
 function keepSpacing(value='', max=500) { return String(value ?? '').replace(/\r/g,'').slice(0,max); }
@@ -28,9 +30,10 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event']);
+      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
+        if(action.startsWith('library-')) return handleLibraryAction(req,res);
         if(action==='set-popup'){
           const imageData=String(req.body?.imageData||''),title=safeText(req.body?.title,80),body=safeText(req.body?.body,300);
           if(!imageData.startsWith('data:image/')) return res.status(400).json({error:'Selecciona una imagen válida.'});
@@ -88,6 +91,8 @@ export default async function handler(req, res) {
         }
         if(action==='delete-event'){const id=safeText(req.body?.id,90),events=await getEvents(),existing=events.find(e=>e.id===id),next=events.filter(e=>e.id!==id);if(next.length===events.length)return res.status(404).json({error:'Evento no encontrado.'});await deleteEventData(id,existing);await saveEvents(next);return res.status(200).json({ok:true});}
       }
+
+      if(action==='ai-ask') return handleAiAction(req,res);
 
       // Acciones de integrantes autorizados para eventos.
       const session=await requireApproved(req,res); if(!session)return;
