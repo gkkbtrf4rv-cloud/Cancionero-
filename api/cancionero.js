@@ -30,9 +30,10 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete']);
+      const adminActions=new Set(['set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','list','upload','delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
+        if(['list','upload','delete'].includes(action)){req.body.action='library-'+action;return handleLibraryAction(req,res);}
         if(action.startsWith('library-')) return handleLibraryAction(req,res);
         if(action==='set-popup'){
           const imageData=String(req.body?.imageData||''),title=safeText(req.body?.title,80),body=safeText(req.body?.body,300);
@@ -92,7 +93,7 @@ export default async function handler(req, res) {
         if(action==='delete-event'){const id=safeText(req.body?.id,90),events=await getEvents(),existing=events.find(e=>e.id===id),next=events.filter(e=>e.id!==id);if(next.length===events.length)return res.status(404).json({error:'Evento no encontrado.'});await deleteEventData(id,existing);await saveEvents(next);return res.status(200).json({ok:true});}
       }
 
-      if(action==='ai-ask') return handleAiAction(req,res);
+      if(action==='ai-ask' || (!action && req.body?.question)) return handleAiAction(req,res);
 
       // Acciones de integrantes autorizados para eventos.
       const session=await requireApproved(req,res); if(!session)return;
