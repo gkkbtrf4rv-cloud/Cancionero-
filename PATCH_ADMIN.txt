@@ -1,0 +1,21 @@
+CAMBIOS MÍNIMOS EN admin.html
+
+No reemplaces las funciones actuales del administrador.
+
+1. En el <head>, justo antes de </head>, agrega:
+
+<link rel="stylesheet" href="/admin-assets/admin-sections.css">
+
+2. Justo antes de </body>, DESPUÉS del script actual del administrador, agrega:
+
+<script src="/admin-assets/admin-sections.js"></script>
+
+Eso convierte automáticamente la página larga actual en secciones:
+- Inicio
+- Avisos
+- Eventos
+- Canciones
+- Biblioteca Tuna
+- Integrantes
+
+El script reutiliza las tarjetas que ya existen, por lo que no hay que mover manualmente cada bloque.
