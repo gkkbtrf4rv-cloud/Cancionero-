@@ -90,6 +90,20 @@
 
   byId('btnLibraryAI').onclick = () => location.href = '/ia.html';
 
+  async function extractPdfPages(file) {
+    const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const text = content.items.map(item => item.str || '').join(' ').replace(/\\s+/g, ' ').trim();
+      pages.push({ page: pageNumber, text });
+    }
+    return pages;
+  }
+
   const fileAsDataUrl = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -179,12 +193,17 @@
     msg.textContent = 'Leyendo, subiendo e indexando el libro…';
 
     try {
+      const isPdf = file.type === 'application/pdf' || /\\.pdf$/i.test(file.name);
+      const pages = isPdf ? await extractPdfPages(file) : [];
+      const text = isPdf ? '' : await file.text();
       const data = await libraryPost({
         action: 'upload',
         title,
         author: byId('libraryAuthor').value.trim(),
         filename: file.name,
-        fileData: await fileAsDataUrl(file)
+        fileData: await fileAsDataUrl(file),
+        pages,
+        text
       });
       msg.className = 'msg ok';
       msg.textContent = '✅ “' + data.book.title + '” agregado con ' + data.book.chunks + ' fragmentos' +
