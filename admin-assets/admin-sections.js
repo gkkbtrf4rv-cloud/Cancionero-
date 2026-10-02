@@ -26,6 +26,7 @@
     '<button type="button" class="admin-nav-btn" data-go="comunicacion">📣 Avisos</button>' +
     '<button type="button" class="admin-nav-btn" data-go="eventos">📅 Eventos</button>' +
     '<button type="button" class="admin-nav-btn" data-go="canciones">🎼 Canciones</button>' +
+    '<button type="button" class="admin-nav-btn" data-go="permiso">📄 Permiso de ensayo</button>' +
     '<button type="button" class="admin-nav-btn" data-go="biblioteca">📚 Biblioteca</button>' +
     '<button type="button" class="admin-nav-btn" data-go="integrantes">👥 Integrantes</button>' +
     '</div>';
@@ -38,6 +39,7 @@
     '<div class="admin-home-card" data-open="comunicacion"><div class="admin-home-icon">📣</div><strong>Avisos</strong><small>Notificaciones y pop-up para integrantes.</small></div>' +
     '<div class="admin-home-card" data-open="eventos"><div class="admin-home-icon">📅</div><strong>Eventos</strong><small>Viajes, presentaciones, portadas y setlists.</small></div>' +
     '<div class="admin-home-card" data-open="canciones"><div class="admin-home-icon">🎼</div><strong>Canciones</strong><small>Agregar, editar, portadas y repertorio.</small></div>' +
+    '<div class="admin-home-card" data-open="permiso"><div class="admin-home-icon">📄</div><strong>Permiso de ensayo</strong><small>Subir o reemplazar la autorización de FES Acatlán.</small></div>' +
     '<div class="admin-home-card" data-open="biblioteca"><div class="admin-home-icon">📚</div><strong>Biblioteca Tuna</strong><small>Libros para historia, tradición y Modo Pardillo.</small></div>' +
     '<div class="admin-home-card" data-open="integrantes"><div class="admin-home-icon">👥</div><strong>Integrantes</strong><small>Solicitudes, accesos y dispositivos.</small></div>' +
     '<div class="admin-home-card" data-open-ai="1"><div class="admin-home-icon">✨</div><strong>Probar IA</strong><small>Abrir el asistente como lo verá un integrante.</small></div>';
@@ -63,6 +65,42 @@
   const firstIntegrantes = cards.find(card => card.dataset.adminSection === 'integrantes');
   if (firstIntegrantes) firstIntegrantes.insertAdjacentElement('beforebegin', library);
   else document.querySelector('.wrap').appendChild(library);
+
+  const permission = document.createElement('div');
+  permission.className = 'card';
+  permission.dataset.adminSection = 'permiso';
+  permission.innerHTML = '<h2>📄 Permiso de ensayo</h2><p class="hint">Hoja de autorización para entrar a FES Acatlán. Al reemplazarla, los integrantes reciben la nueva versión al conectarse al Cancionero.</p><label for="permissionPassword">Contraseña de administrador</label><input id="permissionPassword" type="password" autocomplete="current-password"><label for="permissionFile">Hoja de autorización</label><input id="permissionFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><p class="hint">PDF o imagen JPEG, PNG o WebP, hasta 3 MB. Se aceptan documentos escaneados; no requieren extraer texto.</p><div class="actions"><button type="button" id="permissionUpload">Subir / reemplazar permiso</button><button type="button" class="secondary" id="permissionRefresh">Consultar documento actual</button></div><div id="permissionAdminMsg" class="msg" role="status"></div><div id="permissionCurrent" class="hint">Consulta el documento actual con tu contraseña.</div>';
+  library.insertAdjacentElement('afterend',permission);
+  async function permissionPost(payload) {
+    const password = byId('permissionPassword').value;
+    if(!password) throw new Error('Escribe la contraseña de administrador.');
+    const response = await fetch('/api/cancionero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password,...payload})});
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || 'No se pudo guardar el permiso.');
+    return data;
+  }
+  function renderPermission(doc) {
+    byId('permissionCurrent').textContent = doc ? doc.filename + ' · ' + formatBytes(doc.size) + ' · actualizado ' + new Date(doc.updatedAt).toLocaleString('es-MX') : 'Todavía no hay autorización cargada. Selecciona el documento y pulsa Subir / reemplazar permiso.';
+  }
+  async function permissionTask(upload) {
+    const msg = byId('permissionAdminMsg'), button = byId(upload ? 'permissionUpload' : 'permissionRefresh');
+    button.disabled = true; msg.className='msg'; msg.textContent=upload ? 'Guardando autorización…' : 'Consultando autorización…';
+    try {
+      let payload={action:'permission-admin'};
+      if(upload) {
+        const file=byId('permissionFile').files?.[0];
+        if(!file) throw new Error('Selecciona un PDF o una imagen.');
+        if(file.size>3000000) throw new Error('El archivo supera 3 MB.');
+        payload={action:'permission-upload',filename:file.name,fileData:await fileAsDataUrl(file)};
+      }
+      const data=await permissionPost(payload); renderPermission(data.permission);
+      msg.className='msg ok'; msg.textContent=upload ? '✅ Permiso guardado. Ya está disponible en el Cancionero.' : '✅ Estado actualizado.';
+      if(upload) byId('permissionFile').value='';
+    }catch(err){msg.className='msg err';msg.textContent=err.message;}
+    finally{button.disabled=false;}
+  }
+  byId('permissionUpload').onclick=()=>permissionTask(true);
+  byId('permissionRefresh').onclick=()=>permissionTask(false);
 
   function showSection(section) {
     const isHome = section === 'inicio';
