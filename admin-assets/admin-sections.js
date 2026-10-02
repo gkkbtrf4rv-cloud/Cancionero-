@@ -7,8 +7,8 @@
     const text = heading.toLowerCase();
     if (text.includes('aviso') || text.includes('pop-up')) return 'comunicacion';
     if (text.includes('evento') || text.includes('viaje')) return 'eventos';
-    if (text.includes('cancion')) return 'canciones';
     if (text.includes('dispositivos') || text.includes('acceso') || text.includes('solicitudes') || text.includes('integrantes')) return 'integrantes';
+    if (text.includes('cancion')) return 'canciones';
     return 'otros';
   }
 
@@ -18,6 +18,18 @@
 
   const hero = document.querySelector('.admin-hero');
   if (!hero) return;
+
+  // La contraseña y el estado se comparten entre todas las secciones.
+  const password = byId('password');
+  if(password){
+    const access=document.createElement('div');access.className='card admin-access-card';
+    const label=password.previousElementSibling;
+    if(label?.tagName==='LABEL'){label.htmlFor='password';access.append(label);}
+    password.setAttribute('form','formNotif');access.append(password);
+    if(byId('estado'))access.append(byId('estado'));
+    hero.insertAdjacentElement('afterend',access);
+  }
+  if(byId('btnIntegrantesEstado'))byId('btnIntegrantesEstado').onclick=()=>byId('btnEstado').click();
 
   const nav = document.createElement('div');
   nav.className = 'admin-section-nav';
@@ -42,7 +54,7 @@
     '<div class="admin-home-card" data-open="permiso"><div class="admin-home-icon">📄</div><strong>Permiso de ensayo</strong><small>Subir o reemplazar la autorización de FES Acatlán.</small></div>' +
     '<div class="admin-home-card" data-open="biblioteca"><div class="admin-home-icon">📚</div><strong>Biblioteca Tuna</strong><small>Libros para historia, tradición y Modo Pardillo.</small></div>' +
     '<div class="admin-home-card" data-open="integrantes"><div class="admin-home-icon">👥</div><strong>Integrantes</strong><small>Solicitudes, accesos y dispositivos.</small></div>' +
-    '<div class="admin-home-card" data-open-ai="1"><div class="admin-home-icon">✨</div><strong>Probar IA</strong><small>Abrir el asistente como lo verá un integrante.</small></div>';
+    '<div class="admin-home-card" data-open-ai="1"><div class="admin-home-icon">✨</div><strong>Ver Biblioteca</strong><small>Abrir la búsqueda y el lector para integrantes.</small></div>';
   nav.insertAdjacentElement('afterend', home);
 
   const library = document.createElement('div');
@@ -50,7 +62,7 @@
   library.dataset.adminSection = 'biblioteca';
   library.innerHTML =
     '<h2>📚 Biblioteca Tuna</h2>' +
-    '<p class="hint">Sube libros y documentos para que la IA responda usando esas fuentes. El archivo queda privado y el texto se indexa para búsqueda.</p>' +
+    '<p class="hint">Sube libros y documentos para que los integrantes puedan buscarlos y leerlos. El archivo queda privado y el texto se indexa para búsqueda.</p>' +
     '<label>Contraseña de administrador</label><input id="libraryPassword" type="password" autocomplete="current-password" placeholder="La misma contraseña del administrador">' +
     '<div class="row"><div><label>Título del libro</label><input id="libraryTitle" maxlength="160" placeholder="Ej. Historia de la Tuna"></div>' +
     '<div><label>Autor (opcional)</label><input id="libraryAuthor" maxlength="120" placeholder="Nombre del autor"></div></div>' +
@@ -58,8 +70,8 @@
     '<p class="hint">PDF, TXT o MD. Hasta 100 MB por libro. La carga es privada y muestra su progreso. Si el PDF es un escaneo sin texto, necesitará OCR.</p></div>' +
     '<div class="actions"><button type="button" id="btnLibraryUpload">➕ Agregar a Biblioteca</button>' +
     '<button type="button" class="secondary" id="btnLibraryList">Actualizar lista</button>' +
-    '<button type="button" class="secondary" id="btnLibraryAI">✨ Probar asistente</button></div>' +
-    '<div class="admin-library-meter">💡 La IA busca primero los fragmentos relacionados y solo envía esos al modelo. Eso reduce costo y respuestas inventadas.</div>' +
+    '<button type="button" class="secondary" id="btnLibraryAI">📚 Abrir Biblioteca</button></div>' +
+    '<div class="admin-library-meter">🔎 La búsqueda es interna: muestra fragmentos del texto y abre el libro en su página. No necesita créditos de IA.</div>' +
     '<div id="libraryMsg" class="msg"></div><div id="libraryList" class="admin-library-list"><div class="hint">Pulsa “Actualizar lista” para ver los libros cargados.</div></div>';
 
   const firstIntegrantes = cards.find(card => card.dataset.adminSection === 'integrantes');
@@ -267,7 +279,7 @@
       const {put} = await import('/admin-assets/blob-client.mjs');
       const options = (token, type, label) => ({access:'private',token,contentType:type,multipart:true,onUploadProgress:({percentage})=>progress(label + ' ' + Math.round(percentage) + '%…')});
       await put(ticket.originalPath, file, options(ticket.originalToken, mimeType, 'Subiendo libro'));
-      await put(ticket.chunksPath, index, options(ticket.indexToken, 'application/json', 'Preparando contenido para la IA'));
+      await put(ticket.chunksPath, index, options(ticket.indexToken, 'application/json', 'Preparando índice de búsqueda'));
       progress('Verificando y registrando el libro…');
       finishing = true;
       const data = await libraryPost({action:'library-upload-finish',id:ticket.id});

@@ -7,7 +7,7 @@ import { cleanEvent, getEvents, saveEvents, getEvent, getEventSummaries, getComm
 import { handleLibraryUpload } from '../lib/library-upload.js';
 import { handleLibraryAction } from '../lib/library-actions.js';
 import { getPermission, permissionMetadata, getPermissionBlob, handlePermissionAdmin } from '../lib/permission-store.js';
-import { handleAiAction } from '../lib/ai-actions.js';
+import { handleMemberLibrary, handleMemberBook } from '../lib/library-member.js';
 
 function adminOk(password) { return Boolean(process.env.ADMIN_PASSWORD) && password === process.env.ADMIN_PASSWORD; }
 function keepSpacing(value='', max=500) { return String(value ?? '').replace(/\r/g,'').slice(0,max); }
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         if(action==='delete-event'){const id=safeText(req.body?.id,90),events=await getEvents(),existing=events.find(e=>e.id===id),next=events.filter(e=>e.id!==id);if(next.length===events.length)return res.status(404).json({error:'Evento no encontrado.'});await deleteEventData(id,existing);await saveEvents(next);return res.status(200).json({ok:true});}
       }
 
-      if(action==='ai-ask' || (!action && req.body?.question)) return handleAiAction(req,res);
+      if(['library-search','library-open','ai-ask'].includes(action)) return await handleMemberLibrary(req,res);
 
       // Acciones de integrantes autorizados para eventos.
       const session=await requireApproved(req,res); if(!session)return;
@@ -130,6 +130,8 @@ export default async function handler(req, res) {
     }
 
     if(req.method!=='GET')return res.status(405).json({error:'Método no permitido'});
+    if(req.query?.asset==='book') return await handleMemberBook(req,res);
+    if(req.query?.action==='library-catalog') return await handleMemberLibrary(req,res);
     const session=await requireApproved(req,res);if(!session)return;
 
     // v30: las imágenes privadas se sirven por esta misma función autenticada.
@@ -177,5 +179,5 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control','no-store');
     const cancionesClient=canciones.map(({coverPathname,...song})=>({...song,coverImageUrl:coverPathname?`/api/cancionero?asset=song-cover&songId=${encodeURIComponent(song.id)}&v=${encodeURIComponent(song.coverUpdatedAt||'1')}`:null}));
     return res.status(200).json({ok:true,version,canciones:cancionesClient,eventos,permission:permissionMetadata(permissionDoc),popup:popup?.active?popup:null});
-  } catch(err){console.error('Error en cancionero:',err);if(err?.message==='BLOB_UPLOAD_FAILED')return res.status(500).json({error:'No se pudo guardar la foto en Vercel Blob. Revisa que el Blob Store privado esté conectado a este proyecto.'});return res.status(500).json({error:'No se pudo procesar la solicitud.'});}
+  } catch(err){console.error('Error en cancionero:',err);if(res.headersSent){res.destroy();return;}if(err?.message==='BLOB_UPLOAD_FAILED')return res.status(500).json({error:'No se pudo guardar la foto en Vercel Blob. Revisa que el Blob Store privado esté conectado a este proyecto.'});return res.status(500).json({error:'No se pudo procesar la solicitud.'});}
 }
