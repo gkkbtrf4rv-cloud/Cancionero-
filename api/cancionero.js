@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
         if(action==='permission-admin' || action==='permission-upload') return handlePermissionAdmin(req,res);
         if(['list','upload','delete'].includes(action)){req.body.action='library-'+action;return handleLibraryAction(req,res);}
-        if(['library-upload-start','library-upload-finish','library-upload-abort'].includes(action)) return handleLibraryUpload(req,res);
+        if(['library-upload-start','library-upload-finish','library-upload-abort'].includes(action)) return await handleLibraryUpload(req,res);
         if(action.startsWith('library-')) return handleLibraryAction(req,res);
         if(action==='set-popup'){
           const imageData=String(req.body?.imageData||''),title=safeText(req.body?.title,80),body=safeText(req.body?.body,300);
