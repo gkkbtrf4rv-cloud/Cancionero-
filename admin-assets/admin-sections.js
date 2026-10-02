@@ -7,8 +7,8 @@
     const text = heading.toLowerCase();
     if (text.includes('aviso') || text.includes('pop-up')) return 'comunicacion';
     if (text.includes('evento') || text.includes('viaje')) return 'eventos';
-    if (text.includes('cancion')) return 'canciones';
     if (text.includes('dispositivos') || text.includes('acceso') || text.includes('solicitudes') || text.includes('integrantes')) return 'integrantes';
+    if (text.includes('cancion')) return 'canciones';
     return 'otros';
   }
 
@@ -18,6 +18,18 @@
 
   const hero = document.querySelector('.admin-hero');
   if (!hero) return;
+
+  // La contraseña y el estado se comparten entre todas las secciones.
+  const password = byId('password');
+  if(password){
+    const access=document.createElement('div');access.className='card admin-access-card';
+    const label=password.previousElementSibling;
+    if(label?.tagName==='LABEL'){label.htmlFor='password';access.append(label);}
+    password.setAttribute('form','formNotif');access.append(password);
+    if(byId('estado'))access.append(byId('estado'));
+    hero.insertAdjacentElement('afterend',access);
+  }
+  if(byId('btnIntegrantesEstado'))byId('btnIntegrantesEstado').onclick=()=>byId('btnEstado').click();
 
   const nav = document.createElement('div');
   nav.className = 'admin-section-nav';
@@ -58,7 +70,7 @@
     '<p class="hint">PDF, TXT o MD. Hasta 100 MB por libro. La carga es privada y muestra su progreso. Si el PDF es un escaneo sin texto, necesitará OCR.</p></div>' +
     '<div class="actions"><button type="button" id="btnLibraryUpload">➕ Agregar a Biblioteca</button>' +
     '<button type="button" class="secondary" id="btnLibraryList">Actualizar lista</button>' +
-    '<button type="button" class="secondary" id="btnLibraryAI">✨ Probar asistente</button></div>' +
+    '<button type="button" class="secondary" id="btnLibraryAI">📚 Abrir Biblioteca</button></div>' +
     '<div class="admin-library-meter">🔎 La búsqueda es interna: muestra fragmentos del texto y abre el libro en su página. No necesita créditos de IA.</div>' +
     '<div id="libraryMsg" class="msg"></div><div id="libraryList" class="admin-library-list"><div class="hint">Pulsa “Actualizar lista” para ver los libros cargados.</div></div>';
 

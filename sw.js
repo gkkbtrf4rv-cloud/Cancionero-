@@ -39,6 +39,7 @@ self.addEventListener("fetch", (event) => {
 
   // El administrador es una página independiente. No debe recibir el shell de la app.
   if (event.request.mode === 'navigate') {
+    if (url.pathname === '/reader.html') return;
     if (url.pathname === '/ia.html') { event.respondWith(cacheFirst(event.request)); return; }
     if (url.pathname === '/admin.html' || url.pathname === '/admin') return;
     event.respondWith(cacheFirstPage(event.request));
