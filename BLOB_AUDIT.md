@@ -20,7 +20,7 @@ Son causas confirmadas en el código, no una atribución medida de las 7,500 ope
 | GET `asset=permission` | `getPermissionBlob` → `get` | Bajo demanda, sesión y versión vigentes; habilitar caché Blob, respuesta sigue `private,no-store` |
 | GET/POST `library-catalog`, POST `library-list` | Ninguna | Catálogo KV; sin PDFs ni índices |
 | POST `library-open` | Ninguna | Emite ticket limitado al libro, con vencimiento |
-| GET `asset=book` | `get(originalPath)` | Solo al abrir lector; sesión y existencia revalidadas, Range conservado; caché SDK habilitada por defecto; respuesta privada sin caché compartida |
+| GET `asset=book` | `get(originalPath)` | Solo al abrir lector; sesión y existencia revalidadas, Range conservado; caché SDK habilitada por defecto; respuesta privada con caché de navegador de 5 minutos, sin caché compartida |
 | POST `library-search` / `ai-ask` | `getKnowledgeChunks` → `readPrivateJson` → `get` por índice | Caché Blob + memoria por ruta única (5 minutos, máximo 8 MiB, solicitudes simultáneas agrupadas); filtro bookId antes de leer; catálogo vivo evita devolver libros eliminados |
 | POST `library-upload-finish` | Dos `head` + `get` del índice recién subido | Se conservan para validar tamaño, tipo, contenido y permisos de la subida; lectura sin caché intencional en finalización, no navegación |
 | `signedPhotoUrl` en event-store | `issueSignedToken` / `presignUrl` | Función interna sin llamadas; el álbum usa endpoints autenticados estables, no firmas por listado |
@@ -32,6 +32,8 @@ No hay `list()` del SDK ni `getDownloadUrl()` en el código activo. `getPhotoPag
 Se mantienen archivos privados y autorización antes de cada lectura del servidor. No se añade caché pública/CDN al endpoint autenticado. Las rutas de subidas llevan fecha o UUID, por lo que activar la caché no confunde versiones. Las portadas de canciones ya tenían IntersectionObserver; se conserva. Las fotos del álbum ahora también esperan a estar visibles; el visor se carga inmediatamente. La caché local sobrevive a actualizaciones del shell v59, y el cierre de sesión elimina caché y URLs temporales; una descarga terminada tras cambiar de sesión no se publica en memoria. Las solicitudes fallidas se pueden reintentar y no quedan guardadas como índices vacíos.
 
 No se migran portadas a almacenamiento público: no hay evidencia que permita clasificar cada una como no sensible; hay eventos ocultos y fotografías privadas. Un almacén público también contabiliza misses. Una futura migración selectiva a archivos estáticos podría eliminar operaciones Blob para esas portadas, pero requiere clasificar los archivos y sincronizar altas/cambios. La optimización actual no necesita una migración ni cambia el acceso al contenido.
+
+Antes de finalizar, main avanzó a `d21655c` con otra optimización. Se integró: caché Blob ya activada, rangos de lector de 4 MiB y caché privada de navegador para PDFs de 5 minutos se conservan. La caché global de índices de main se sustituye por caché acotada por pathname para soportar filtros de libro, agrupar concurrencia y reintentar fallos sin congelar resultados parciales. El ahorro estimado se compara con la base inicial e43d3b4; parte de él ya estaba en main al integrar. La caché de navegador de PDF puede reutilizar bytes hasta 5 minutos tras revocar acceso; toda petición nueva revalida sesión y ticket.
 
 ## Estimación (escenarios, no medición histórica)
 
