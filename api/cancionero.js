@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
-      const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','library-upload-start','library-upload-finish','library-upload-abort','list','upload','delete']);
+      const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','get-event-cover-admin','save-event','delete-event','library-list','library-upload','library-delete','library-upload-start','library-upload-finish','library-upload-abort','list','upload','delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
         if(action==='permission-admin' || action==='permission-upload') return handlePermissionAdmin(req,res);
@@ -67,18 +67,16 @@ export default async function handler(req, res) {
         if(action==='delete-song'||action==='delete-custom-song'){const id=String(req.body?.id||'').trim(),songs=await getAllSongs(),found=songs.find(s=>s.id===id),next=songs.filter(s=>s.id!==id);if(next.length===songs.length)return res.status(404).json({error:'Canción no encontrada.'});if(found?.coverPathname)await deleteSongCover(found.coverPathname);await saveAllSongs(next);return res.status(200).json({ok:true,total:next.length});}
         if(action==='list-events-admin'){
           const events=await getEventSummaries({includeHidden:true});
-          const eventsWithCover=await Promise.all(events.map(async e=>{
-            if(!e.coverPathname) return {...e,coverImageData:null};
-            try{
-              const result=await getPrivateBlob(e.coverPathname);
-              if(!result || result.statusCode!==200 || !result.stream) return {...e,coverImageData:null};
-              const chunks=[];
-              for await (const chunk of Readable.fromWeb(result.stream)) chunks.push(Buffer.from(chunk));
-              const contentType=result.blob?.contentType||'image/jpeg';
-              return {...e,coverImageData:`data:${contentType};base64,${Buffer.concat(chunks).toString('base64')}`};
-            }catch(err){console.error('No se pudo cargar portada para Admin:',err);return {...e,coverImageData:null};}
-          }));
-          return res.status(200).json({ok:true,events:eventsWithCover});
+          return res.status(200).json({ok:true,events});
+        }
+        if(action==='get-event-cover-admin'){
+          const event=await getEvent(String(req.body?.eventId||''));
+          if(!event?.coverPathname)return res.status(200).json({ok:true,imageData:null});
+          const result=await getPrivateBlob(event.coverPathname);
+          if(!result?.stream)return res.status(200).json({ok:true,imageData:null});
+          const chunks=[];
+          for await(const chunk of Readable.fromWeb(result.stream))chunks.push(Buffer.from(chunk));
+          return res.status(200).json({ok:true,imageData:`data:${result.blob?.contentType||'image/jpeg'};base64,${Buffer.concat(chunks).toString('base64')}`});
         }
         if(action==='save-event'){
           const events=await getEvents();const incomingId=safeText(req.body?.event?.id,90);const existing=incomingId?events.find(e=>e.id===incomingId):null;let event=cleanEvent(req.body?.event||{},existing);
@@ -154,16 +152,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ok:true,permission:permissionMetadata(await getPermission())});
     }
     if(asset==='cover' || asset==='photo' || asset==='song-cover'){
-      let pathname='';
+      let pathname='', version='';
       if(asset==='song-cover'){
-        const songId=safeText(req.query?.songId,120);const songs=await getAllSongs();const song=songs.find(s=>s.id===songId);pathname=song?.coverPathname||'';
+        const songId=safeText(req.query?.songId,120);const songs=await getAllSongs();const song=songs.find(s=>s.id===songId);pathname=song?.coverPathname||'';version=song?.coverUpdatedAt||'1';
       }else{
         const eventId=safeText(req.query?.eventId,90); const event=await getEvent(eventId);
         if(!event || event.visible===false)return res.status(404).end('Not found');
-        if(asset==='cover') pathname=event.coverPathname||'';
+        if(asset==='cover'){pathname=event.coverPathname||'';version=event.coverUpdatedAt||'1';}
         else {const photoId=safeText(req.query?.photoId,100); const meta=await getPhotoMeta(eventId,photoId);pathname=(meta?.storage==='vercel-blob-private' && meta?.pathname)?meta.pathname:'';}
       }
-      if(!pathname)return res.status(404).end('Not found');
+      if(!pathname || (version && req.query?.v && req.query.v!==version))return res.status(404).end('Not found');
       const result=await getPrivateBlob(pathname);
       if(!result || result.statusCode!==200 || !result.stream)return res.status(404).end('Not found');
       res.setHeader('Content-Type',result.blob?.contentType||'image/jpeg');

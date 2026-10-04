@@ -1076,21 +1076,30 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   function leerDetallesEventosOffline(){try{return JSON.parse(localStorage.getItem(EVENT_DETAIL_CACHE_KEY)||'{}')||{};}catch{return {};}}
   function guardarDetalleEventoOffline(eventId,data){try{const all=leerDetallesEventosOffline();all[eventId]={...data,savedAt:Date.now()};localStorage.setItem(EVENT_DETAIL_CACHE_KEY,JSON.stringify(all));}catch(err){console.warn('No se pudo guardar detalle offline del evento:',err);}}
   function detalleEventoOffline(eventId){return leerDetallesEventosOffline()[eventId]||null;}
-  async function privateAssetUrl(url){
+  const PRIVATE_ASSET_PENDING=new Map();
+  function privateAssetUrl(url){
+    if(PRIVATE_ASSET_PENDING.has(url))return PRIVATE_ASSET_PENDING.get(url);
+    const pending=loadPrivateAssetUrl(url).finally(()=>{if(PRIVATE_ASSET_PENDING.get(url)===pending)PRIVATE_ASSET_PENDING.delete(url);});
+    PRIVATE_ASSET_PENDING.set(url,pending);
+    return pending;
+  }
+  async function loadPrivateAssetUrl(url){
+    const sessionToken=token();
     if(!url) return '';
     if(url.startsWith('data:')||url.startsWith('blob:')) return url;
     if(PRIVATE_ASSET_CACHE.has(url)) return PRIVATE_ASSET_CACHE.get(url);
     let response=null;
     // Primero usa la copia local. Así una portada ya vista aparece de inmediato.
-    if('caches' in window){try{response=await caches.match(url);}catch{}}
+    if('caches' in window){try{response=await (await caches.open(PRIVATE_ASSET_CACHE_NAME)).match(url);}catch{}}
     if(!response||!response.ok){
       try{
         response=await fetch(url,{headers:authHeaders(),cache:'default'});
-        if(response.ok && 'caches' in window){try{const c=await caches.open(PRIVATE_ASSET_CACHE_NAME);await c.put(url,response.clone());}catch{}}
+        if(response.ok && token()===sessionToken && 'caches' in window){try{const c=await caches.open(PRIVATE_ASSET_CACHE_NAME);await c.put(url,response.clone());}catch{}}
       }catch{}
     }
     if(!response||!response.ok) throw new Error('No se pudo cargar la imagen privada');
     const blob=await response.blob();
+    if(token()!==sessionToken)throw new Error('La sesión cambió');
     const objectUrl=URL.createObjectURL(blob);
     PRIVATE_ASSET_CACHE.set(url,objectUrl);
     return objectUrl;
@@ -1109,7 +1118,15 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
     if(IMAGE_OBSERVER && !immediate){el.dataset.privateBg=url;IMAGE_OBSERVER.observe(el);return;}
     try{const src=await privateAssetUrl(url);el.style.backgroundImage=`url("${src.replace(/"/g,'%22')}")`;}catch(err){console.warn('No se pudo mostrar portada:',err);}
   }
-  async function setPrivateImg(img,url){
+  const PHOTO_OBSERVER=('IntersectionObserver'in window)?new IntersectionObserver((entries,obs)=>{
+    for(const entry of entries){if(!entry.isIntersecting)continue;const img=entry.target,url=img.dataset.privateImg;delete img.dataset.privateImg;obs.unobserve(img);loadPrivateImg(img,url);}
+  },{rootMargin:'240px 0px'}):null;
+  function setPrivateImg(img,url,immediate=false){
+    if(!img||!url)return;
+    if(PHOTO_OBSERVER&&!immediate){img.dataset.privateImg=url;PHOTO_OBSERVER.observe(img);return;}
+    return loadPrivateImg(img,url);
+  }
+  async function loadPrivateImg(img,url){
     if(!img||!url)return;
     img.loading='lazy';img.decoding='async';
     try{img.src=await privateAssetUrl(url);}catch(err){console.warn('No se pudo mostrar foto:',err);}
@@ -1117,7 +1134,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-premium-na
   function eventDateText(v){try{return new Date(v).toLocaleString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch{return v||'';}}
   function renderCountdown(){if(!EVENTO_ACTUAL?.countdown||eventHasPassed(EVENTO_ACTUAL)){ $('eventCountdownBox').style.display='none'; return; }const target=new Date(EVENTO_ACTUAL.date).getTime(),diff=target-Date.now();if(!Number.isFinite(diff)||diff<=0){$('eventCountdownBox').style.display='none';return;}$('eventCountdownBox').style.display='grid';const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),sec=Math.floor(diff%60000/1000);$('cdDays').textContent=d;$('cdHours').textContent=h;$('cdMinutes').textContent=m;$('cdSeconds').textContent=sec;}
   function renderEventComments(comments=[]){const box=$('eventCommentsList');box.innerHTML='';if(!comments.length){box.innerHTML='<div class="gallery-empty">Todavía no hay comentarios. Puedes ser el primero.</div>';return;}comments.forEach(c=>{const item=document.createElement('div');item.className='comment-item';const name=document.createElement('strong');name.textContent=c.mote||'Integrante';const time=document.createElement('small');try{time.textContent=new Date(c.createdAt).toLocaleString('es-MX');}catch{time.textContent='';}const p=document.createElement('p');p.textContent=c.text||'';item.append(name,time,p);box.appendChild(item);});box.scrollTop=box.scrollHeight;}
-  async function cargarFotosEvento(reset=false){if(!EVENTO_ACTUAL)return;if(reset){EVENT_PHOTO_OFFSET=0;EVENT_PHOTO_NEXT=null;$('eventGallery').innerHTML='';}const d=await eventPost({action:'event-photos',eventId:EVENTO_ACTUAL.id,offset:EVENT_PHOTO_OFFSET});if(reset && !d.items?.length)$('eventGallery').innerHTML='<div class="gallery-empty">Todavía no hay fotos. Sube la primera del álbum.</div>';if(d.items?.length && $('eventGallery').querySelector('.gallery-empty'))$('eventGallery').innerHTML='';for(const photo of d.items||[]){const wrap=document.createElement('div');wrap.className='gallery-item';const img=document.createElement('img');img.loading='lazy';const photoSrc=photo.imageUrl||photo.imageData||'';if(photo.imageUrl)setPrivateImg(img,photo.imageUrl);else img.src=photoSrc;img.alt=photo.caption||`Foto de ${photo.mote||'integrante'}`;const mote=document.createElement('div');mote.className='photo-mote';mote.textContent=photo.mote||'Integrante';wrap.append(img,mote);wrap.onclick=async()=>{ const viewer=$('photoViewerImg'); if(photo.imageUrl) await setPrivateImg(viewer,photo.imageUrl); else viewer.src=photo.imageData||'';$('photoViewerCaption').textContent=`${photo.mote||'Integrante'}${photo.caption?' · '+photo.caption:''}`;$('photoViewer').classList.add('open');};$('eventGallery').appendChild(wrap);}EVENT_PHOTO_NEXT=d.nextOffset;$('btnMoreEventPhotos').style.display=EVENT_PHOTO_NEXT===null?'none':'inline-block';if(EVENT_PHOTO_NEXT!==null)EVENT_PHOTO_OFFSET=EVENT_PHOTO_NEXT;}
+  async function cargarFotosEvento(reset=false){if(!EVENTO_ACTUAL)return;if(reset){EVENT_PHOTO_OFFSET=0;EVENT_PHOTO_NEXT=null;$('eventGallery').innerHTML='';}const d=await eventPost({action:'event-photos',eventId:EVENTO_ACTUAL.id,offset:EVENT_PHOTO_OFFSET});if(reset && !d.items?.length)$('eventGallery').innerHTML='<div class="gallery-empty">Todavía no hay fotos. Sube la primera del álbum.</div>';if(d.items?.length && $('eventGallery').querySelector('.gallery-empty'))$('eventGallery').innerHTML='';for(const photo of d.items||[]){const wrap=document.createElement('div');wrap.className='gallery-item';const img=document.createElement('img');img.loading='lazy';const photoSrc=photo.imageUrl||photo.imageData||'';if(photo.imageUrl)setPrivateImg(img,photo.imageUrl);else img.src=photoSrc;img.alt=photo.caption||`Foto de ${photo.mote||'integrante'}`;const mote=document.createElement('div');mote.className='photo-mote';mote.textContent=photo.mote||'Integrante';wrap.append(img,mote);wrap.onclick=async()=>{ const viewer=$('photoViewerImg'); if(photo.imageUrl) await setPrivateImg(viewer,photo.imageUrl,true); else viewer.src=photo.imageData||'';$('photoViewerCaption').textContent=`${photo.mote||'Integrante'}${photo.caption?' · '+photo.caption:''}`;$('photoViewer').classList.add('open');};$('eventGallery').appendChild(wrap);}EVENT_PHOTO_NEXT=d.nextOffset;$('btnMoreEventPhotos').style.display=EVENT_PHOTO_NEXT===null?'none':'inline-block';if(EVENT_PHOTO_NEXT!==null)EVENT_PHOTO_OFFSET=EVENT_PHOTO_NEXT;}
   function renderEventSetlist(evento){
   const ids=Array.isArray(evento?.setlist)?evento.setlist:[];
   const songs=ids.map(id=>CANCIONES.find(s=>s.id===id)).filter(Boolean);
@@ -1261,7 +1278,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     finally{button.disabled=false;}
   });
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');for(const src of PRIVATE_ASSET_CACHE.values())URL.revokeObjectURL(src);PRIVATE_ASSET_CACHE.clear();PRIVATE_ASSET_PENDING.clear();localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
