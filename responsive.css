@@ -1,0 +1,89 @@
+/* Shared layout for the active app pages; wide content scrolls within its panel. */
+html{scroll-padding-bottom:100px}
+body[data-page]{min-width:0;overflow-wrap:anywhere}
+body[data-page] *,body[data-page] *::before,body[data-page] *::after{box-sizing:border-box}
+body[data-page] input,body[data-page] select,body[data-page] textarea{min-width:0;max-width:100%;font-size:16px}
+body[data-page] button{min-height:44px;touch-action:manipulation}
+body[data-page] :focus-visible{outline:2px solid #f0d58e;outline-offset:3px}
+body[data-page] img{max-width:100%}
+body[data-page] .app,body[data-page] .wrap,body[data-page] main,body[data-page] .card,body[data-page] .grid>*{min-width:0}
+body[data-page] .modal-backdrop,body[data-page] .announcement-backdrop,body[data-page] .photo-viewer{padding:12px; padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+body[data-page] .modal-card,body[data-page] .announcement-card{max-height:calc(100dvh - 24px);max-width:100%}
+body[data-page] .photo-viewer img{max-height:calc(100dvh - 130px);object-fit:contain}
+
+body[data-page="cancionero"] .app{width:100%;padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+body[data-page="cancionero"] .titles,body[data-page="cancionero"] .info,body[data-page="cancionero"] .event-setlist-item strong{min-width:0}
+body[data-page="cancionero"] .premium-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-page="cancionero"] .premium-shortcut{padding-right:28px}
+body[data-page="cancionero"] .song-card{min-width:0}
+body[data-page="cancionero"] .song-sheet{max-width:100%;overscroll-behavior-x:contain}
+/* In chord mode, text and chords need identical character widths, without wrapping. */
+body[data-page="cancionero"] .song-sheet:not(.lyrics-only) .linea.texto{font-family:var(--font-mono);font-size:calc(var(--song-text-size) - 2px);white-space:pre;overflow-wrap:normal;min-width:max-content}
+body[data-page="cancionero"] .song-premium-topbar{flex-wrap:wrap}
+body[data-page="cancionero"] .song-size-btn,body[data-page="cancionero"] .song-premium-back,body[data-page="cancionero"] .song-premium-fav,body[data-page="cancionero"] .song-fav-btn,body[data-page="cancionero"] .event-detail-back{min-width:44px;min-height:44px}
+body[data-page="cancionero"] .settings-panel{max-height:calc(100dvh - 120px - env(safe-area-inset-bottom))}
+body[data-page="cancionero"] .premium-bottom-nav{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+body[data-page="cancionero"] .app>main{padding-left:max(12px,env(safe-area-inset-left))!important;padding-right:max(12px,env(safe-area-inset-right))!important}
+
+body[data-page="admin"] .row{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-page="admin"] .song-item-main>div,body[data-page="admin"] .admin-book-main>div{min-width:0}
+body[data-page="admin"] .song-item .actions,body[data-page="admin"] .event-item .actions{flex-wrap:wrap}
+body[data-page="admin"] .setlist-row{grid-template-columns:auto minmax(0,1fr) auto}
+body[data-page="admin"] .setlist-order button{min-width:44px}
+body[data-page="admin"] .table-wrap{max-width:100%;overscroll-behavior-x:contain}
+body[data-page="admin"] .admin-nav-scroll{scrollbar-width:thin}
+body[data-page="admin"] .admin-nav-scroll::-webkit-scrollbar{display:block;height:5px}
+body[data-page="admin"] .admin-nav-btn{flex-shrink:0}
+
+body[data-page="library"] .grid{grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr))}
+body[data-page="library"] .top>div{min-width:0}
+body[data-page="library"] .toolbar strong{min-width:0;flex-basis:100%}
+body[data-page="library"] .toolbar .button{min-height:44px}
+body[data-page="library"] #reader[open],body[data-page="cancionero"] #permissionViewer[open]{display:flex;flex-direction:column;gap:10px;overflow:hidden;height:94vh;height:94dvh;max-height:calc(100dvh - 16px);max-width:calc(100vw - 16px)}
+body[data-page="library"] #readerStatus,body[data-page="cancionero"] #permissionMessage{flex:none;margin:0;max-height:20dvh;overflow:auto}
+body[data-page="library"] #readerContent,body[data-page="cancionero"] #permissionContent{flex:1;min-height:0;height:auto;min-width:0}
+body[data-page="library"] #readerContent pre{overflow-wrap:anywhere;padding:16px}
+body[data-page="cancionero"] .permission-toolbar strong{min-width:0;flex-basis:100%}
+body[data-page="library"] #reader:fullscreen,body[data-page="cancionero"] #permissionViewer:fullscreen{max-width:none;max-height:none;width:100%;height:100dvh}
+
+body[data-page="reader"]{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100vh;height:100dvh;min-height:0}
+body[data-page="reader"] header{padding-top:max(10px,env(safe-area-inset-top));min-width:0}
+body[data-page="reader"] #pages{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
+body[data-page="reader"] button{min-width:44px}
+body[data-page="reset"]{min-height:100vh;min-height:100dvh;padding:16px}
+body[data-page="reset"] main{width:100%;max-width:480px;margin:0;padding:clamp(18px,5vw,28px)}
+
+@media(min-width:768px){
+ body[data-page="cancionero"] .app{max-width:1040px}
+ body[data-page="cancionero"] .premium-bottom-nav{width:min(1040px,100%)}
+ body[data-page="cancionero"] .settings-fab{right:max(14px,calc((100vw - 1040px)/2 + 14px))}
+ body[data-page="cancionero"] #lista-canciones,body[data-page="cancionero"] #lista-favoritos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ body[data-page="cancionero"] .premium-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))}
+ body[data-page="cancionero"] #vista-detalle{max-width:840px;margin-inline:auto}
+ body[data-page="cancionero"] .event-gallery{grid-template-columns:repeat(4,minmax(0,1fr))}
+ body[data-page="admin"] .wrap{max-width:1200px}
+ body[data-page="admin"] .admin-section-nav{margin-inline:0;border-radius:18px}
+}
+@media(max-width:640px){
+ body[data-page="admin"] .row{grid-template-columns:minmax(0,1fr)}
+ body[data-page="admin"] .admin-book{flex-wrap:wrap;align-items:flex-start}
+ body[data-page="admin"] .admin-book-main{width:100%}
+ body[data-page="admin"] .card{padding:14px}
+ body[data-page="library"] #searchForm{flex-direction:column}
+ body[data-page="library"] #searchForm>*{width:100%;min-width:0;flex:auto}
+}
+@media(max-width:380px){
+ body[data-page="cancionero"] .premium-welcome h2{font-size:25px}
+ body[data-page="cancionero"] .titles h1{font-size:21px}
+ body[data-page="cancionero"] .crest{width:48px;height:48px;flex-shrink:0}
+ body[data-page="cancionero"] .featured-title,body[data-page="cancionero"] .event-hero h2{font-size:28px}
+ body[data-page="cancionero"] .song-premium-kicker{order:3;flex-basis:100%}
+ body[data-page="cancionero"] .song-cover-thumb{width:44px;height:44px}
+ body[data-page="admin"] .setlist-row{grid-template-columns:auto minmax(0,1fr)}
+ body[data-page="admin"] .setlist-order{grid-column:2;flex-wrap:wrap}
+}
+@media(max-height:500px) and (orientation:landscape){
+ body[data-page="cancionero"] .song-premium-hero,body[data-page="cancionero"] .event-hero,body[data-page="cancionero"] .featured-event,body[data-page="cancionero"] .featured-event-content{min-height:220px}
+ body[data-page] .modal-card{max-height:calc(100dvh - 16px)}
+}
+@media(prefers-reduced-motion:reduce){body[data-page] *,body[data-page] *::before,body[data-page] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

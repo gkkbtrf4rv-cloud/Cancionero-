@@ -1,0 +1,30 @@
+name: Responsive layout
+on:
+  pull_request:
+    paths:
+      - '*.html'
+      - '*.css'
+      - 'permission.js'
+      - 'lib/password-reset-page.js'
+      - 'tests/responsive-layout.mjs'
+      - '.github/workflows/responsive.yml'
+permissions:
+  contents: read
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --no-save --ignore-scripts playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: node tests/responsive-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: responsive-layout-screenshots
+          path: responsive-artifacts/
