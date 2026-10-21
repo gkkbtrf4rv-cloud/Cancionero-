@@ -12,6 +12,9 @@ permissions:
   contents: read
 jobs:
   layout:
+    strategy:
+      matrix:
+        browser: [chromium, webkit]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -20,11 +23,13 @@ jobs:
         with:
           node-version: '24'
       - run: npm install --no-save --ignore-scripts playwright@1.58.2
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm test
       - run: node tests/responsive-layout.mjs
+        env:
+          LAYOUT_BROWSER: ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: responsive-layout-screenshots
+          name: responsive-layout-screenshots-${{ matrix.browser }}
           path: responsive-artifacts/

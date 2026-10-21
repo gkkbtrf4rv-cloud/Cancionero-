@@ -12,7 +12,7 @@ body.theme-light .site-footer{background:transparent;color:#655950;border-top-co
 @media(max-width:380px){.site-footer,footer.tab.site-footer{padding-inline:12px;font-size:12px}.site-footer nav{gap:8px 16px}.legal-layout{padding:18px 12px 28px}}
 
 /* Keep the return control outside the document header and clear of phone status bars. */
-.legal-return-bar{position:sticky;top:0;z-index:1000;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:#170d10;border-bottom:1px solid rgba(213,173,90,.25)}
+.legal-return-bar{position:sticky;top:0;z-index:1000;padding:calc(12px + var(--app-safe-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:#170d10;border-bottom:1px solid rgba(213,173,90,.25)}
 .legal-return-inner{width:100%;max-width:860px;margin:0 auto}
 .legal-return-bar .legal-back{display:inline-flex;align-items:center;gap:10px;min-height:48px;max-width:100%;padding:10px 16px;border:1px solid #d5ad5a;border-radius:12px;background:#2c171e;color:#f0d58e;font-size:16px;line-height:24px;font-weight:700;text-decoration:none;touch-action:manipulation}
 .legal-return-bar .legal-back>span:first-child{font-size:24px;flex-shrink:0}

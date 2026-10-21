@@ -87,3 +87,16 @@ body[data-page="reset"] main{width:100%;max-width:480px;margin:0;padding:clamp(1
  body[data-page] .modal-card{max-height:calc(100dvh - 16px)}
 }
 @media(prefers-reduced-motion:reduce){body[data-page] *,body[data-page] *::before,body[data-page] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Keep controls below iOS status bars, including dialogs in the top layer. */
+body[data-page="library"] .app{padding-top:calc(24px + var(--app-safe-top,0px))}
+body[data-page="admin"]{padding-top:var(--app-safe-top,0px)}
+body[data-page="admin"] .admin-section-nav{top:var(--app-safe-top,0px)}
+body[data-page="cancionero"] header.top{padding-top:calc(18px + var(--app-safe-top,0px))}
+body[data-page="cancionero"] .settings-fab{top:calc(14px + var(--app-safe-top,0px))}
+body[data-page="cancionero"] .settings-panel{top:calc(64px + var(--app-safe-top,0px));max-height:calc(100dvh - 120px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px))}
+body[data-page] .modal-backdrop,body[data-page] .announcement-backdrop,body[data-page] .photo-viewer{padding-top:calc(12px + var(--app-safe-top,0px));padding-bottom:calc(12px + var(--app-safe-bottom,0px))}
+body[data-page] .modal-card,body[data-page] .announcement-card{max-height:calc(100dvh - 24px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px))}
+body[data-page="reader"] header{padding-top:calc(10px + var(--app-safe-top,0px))}
+body[data-page="library"] #reader[open],body[data-page="cancionero"] #permissionViewer[open]{top:calc(8px + var(--app-safe-top,0px));bottom:calc(8px + var(--app-safe-bottom,0px));margin-block:auto;height:calc(100dvh - 16px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px));max-height:calc(100dvh - 16px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px))}
+body[data-page="library"] #reader:fullscreen,body[data-page="cancionero"] #permissionViewer:fullscreen{top:0;bottom:0;height:100dvh;max-height:100dvh;padding-top:calc(14px + var(--app-safe-top,0px));padding-bottom:calc(14px + var(--app-safe-bottom,0px))}
