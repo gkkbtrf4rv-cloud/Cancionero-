@@ -41,6 +41,14 @@ try{
    await check('list');
    const footer=page.locator('.site-footer');if(await footer.count()){await footer.scrollIntoViewIfNeeded();const links=await footer.locator('nav a').evaluateAll(els=>els.map(el=>({height:el.getBoundingClientRect().height,bottom:el.getBoundingClientRect().bottom,href:el.getAttribute('href')})));assert.equal(links.length,2);for(const link of links)assert.ok(link.height>=44);const nav=page.locator('#premiumBottomNav');if(await nav.count()){const box=await nav.boundingBox();for(const link of links)assert.ok(link.bottom<=box.y+1,'Footer link is covered by bottom navigation');}}
    if(file==='index.html'&&width>=768){const columns=await page.locator('#lista-canciones').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);assert.equal(columns,2);}
+   if(['terminos.html','privacidad.html'].includes(file)){
+    const back=page.getByRole('link',{name:'Volver al Cancionero',exact:true});
+    const verifyBack=async()=>{const box=await back.boundingBox();assert.ok(box&&box.y>=12&&box.height>=48&&box.y+box.height<=height,'Return link must be visible and touchable');assert.equal(await back.evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('a')===el;}),true,'Return link is covered');};
+    await verifyBack();await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await verifyBack();await page.screenshot({path:`responsive-artifacts/${file}-return-scrolled-${width}x${height}.png`});
+    await page.route('https://return-layout.test/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Cancionero</title><h1>Cancionero</h1>'}));
+    await page.evaluate(()=>{const base=document.createElement('base');base.href='https://return-layout.test/';document.head.prepend(base);});
+    await back.click();await page.waitForURL('https://return-layout.test/');assert.equal(await page.title(),'Cancionero');
+   }
    const controls=await page.locator('button').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().width&&getComputedStyle(el).visibility!=='hidden').map(el=>({text:el.textContent,height:el.getBoundingClientRect().height})));
    for(const control of controls)assert.ok(control.height>=43,`${file}: small touch control ${control.text}`);
    if(file==='index.html'){
