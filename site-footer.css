@@ -10,3 +10,13 @@ footer.tab.site-footer{display:block!important;position:static;bottom:auto;z-ind
 body.theme-light .site-footer{background:transparent;color:#655950;border-top-color:#cbb793}body.theme-light .site-footer a,body.theme-light .registration-legal a{color:#745117}body.theme-light .site-footer .site-footer-motto{color:#74695d}
 .legal-page{margin:0;background:#170d10;color:#f4ead4;font:16px/1.8 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}.legal-page *{box-sizing:border-box}.legal-layout{max-width:900px;width:100%;margin:auto;padding:32px 20px calc(24px + env(safe-area-inset-bottom))}.legal-back{display:inline-flex;align-items:center;min-height:44px;color:#e4c874;text-decoration:none}.legal-brand{margin-top:28px;font-size:11px;letter-spacing:.12em;color:#d5ad5a}.legal-page h1{font:700 clamp(28px,6vw,42px)/1.2 Georgia,serif;margin:12px 0;color:#f4ead4}.legal-date{font-size:13px;color:#baada0}.legal-content{background:#211619;padding:clamp(18px,4vw,32px);border:1px solid rgba(213,173,90,.2);border-radius:18px;margin-top:26px}.legal-content h2{font:700 22px/1.4 Georgia,serif;color:#e4c874;margin:30px 0 12px}.legal-content p{margin:0 0 18px}.legal-content li{margin:0 0 12px}.legal-content ul{padding-left:22px}.legal-content a{color:#e4c874}.legal-content address{font-style:normal}.legal-intro{font-size:18px}.legal-source{font-size:13px;padding-top:20px;border-top:1px solid rgba(213,173,90,.2)}
 @media(max-width:380px){.site-footer,footer.tab.site-footer{padding-inline:12px;font-size:12px}.site-footer nav{gap:8px 16px}.legal-layout{padding:18px 12px 28px}}
+
+/* Keep the return control outside the document header and clear of phone status bars. */
+.legal-return-bar{position:sticky;top:0;z-index:1000;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:#170d10;border-bottom:1px solid rgba(213,173,90,.25)}
+.legal-return-inner{width:100%;max-width:860px;margin:0 auto}
+.legal-return-bar .legal-back{display:inline-flex;align-items:center;gap:10px;min-height:48px;max-width:100%;padding:10px 16px;border:1px solid #d5ad5a;border-radius:12px;background:#2c171e;color:#f0d58e;font-size:16px;line-height:24px;font-weight:700;text-decoration:none;touch-action:manipulation}
+.legal-return-bar .legal-back>span:first-child{font-size:24px;flex-shrink:0}
+.legal-return-bar .legal-back:hover{background:#40212b}
+.legal-return-bar .legal-back:active{background:#512934}
+.legal-page .legal-layout{padding-top:24px}
+.legal-page .legal-brand{margin-top:0}
