@@ -1,5 +1,5 @@
 .site-footer{box-sizing:border-box;width:100%;max-width:1040px;margin:24px auto 0;padding:24px 16px;border-top:1px solid rgba(213,173,90,.25);text-align:center;color:#bfb2a8;font:13px/1.7 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
-footer.tab.site-footer{position:static;bottom:auto;z-index:auto;background:transparent;letter-spacing:normal;font:13px/1.7 Arial,Helvetica,sans-serif;padding:24px 16px}
+footer.tab.site-footer{display:block!important;position:static;bottom:auto;z-index:auto;background:transparent;letter-spacing:normal;font:13px/1.7 Arial,Helvetica,sans-serif;padding:24px 16px}
 .site-footer p{margin:0 0 8px}.site-footer .site-footer-motto{font-size:11px;color:#a7998d}
 .site-footer nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 28px;margin-top:10px}
 .site-footer a,.registration-legal a{color:#e4c874;text-decoration:none;text-underline-offset:4px}
