@@ -1,0 +1,4 @@
+/* One inset shared by page headers and top-layer dialogs. */
+:root{--app-safe-top:env(safe-area-inset-top,0px);--app-safe-bottom:env(safe-area-inset-bottom,0px)}
+/* iOS installed apps can report zero while the translucent status bar is visible. */
+@supports(-webkit-touch-callout:none){@media(display-mode:standalone),(display-mode:fullscreen){:root{--app-safe-top:max(59px,env(safe-area-inset-top,0px))}}}
