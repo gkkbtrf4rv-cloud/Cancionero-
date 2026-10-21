@@ -570,7 +570,7 @@ body.detail-open .premium-bottom-nav{display:none}
   .event-setlist{display:grid;gap:8px}.event-setlist-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:11px;border:1px solid rgba(228,200,116,.16);background:rgba(255,255,255,.045);cursor:pointer}.event-setlist-item .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(201,162,39,.16);color:var(--dorado);font:800 11px var(--font-mono)}.event-setlist-item strong{flex:1;color:var(--marfil);font-size:14px}.event-setlist-item small{display:block;color:var(--dorado-suave);font:10px var(--font-mono);margin-top:2px}.event-setlist-item .go{color:var(--dorado);font-size:18px}
 </style>
   <link rel="preload" href="/logo-tuna.webp" as="image" type="image/webp">
-<link rel="stylesheet" href="/responsive.css?v=60"></head>
+<link rel="stylesheet" href="/responsive.css?v=60"><link rel="stylesheet" href="/site-footer.css?v=61"><script src="/site-footer.js?v=61" defer></script></head>
 <body data-page="cancionero">
 <div id="splashScreen" class="splash-screen"><div class="splash-inner"><div class="splash-emblem"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"></div><div class="splash-kicker">Tradición · Música · Hermandad</div><div class="splash-title">Cancionero de Tuna</div><div class="splash-rule"><span>✦</span></div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
@@ -669,7 +669,7 @@ body.detail-open .premium-bottom-nav{display:none}
     <button type="button" data-premium-nav="events"><b>▣</b><span>Eventos</span></button>
     <button type="button" data-premium-nav="settings"><b>⚙</b><span>Cuenta</span></button>
   </nav>
-  <footer class="tab">¡Aúpa Tuna! — Cancionero de la Tuna de Derecho FES Acatlán</footer>
+  <footer class="tab site-footer" aria-label="Información del Cancionero"><p class="site-footer-motto">¡Aúpa Tuna! · Cancionero de la Tuna de Derecho FES Acatlán</p><p class="site-footer-credit">Creado y administrado por Marlon García Rojas</p><p>Marlon García Rojas © <span data-footer-year>2026</span>. Todos los derechos reservados.</p><nav aria-label="Información legal"><a href="/terminos.html">Términos</a><a href="/privacidad.html">Privacidad</a></nav></footer>
 
 </div>
 
@@ -721,7 +721,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <label>Mote<input id="regMote" required maxlength="40" placeholder="Ej. Goliath"></label>
       <label>Correo electrónico<input id="regEmail" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com"></label>
       <label>Contraseña<input id="regPass" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo 8 caracteres"></label>
-      <button class="auth-submit" type="submit">Crear cuenta</button>
+      <p class="registration-legal">Antes de registrarte, consulta los <a href="/terminos.html">Términos de uso</a> y el <a href="/privacidad.html">Aviso de privacidad</a>.</p><button class="auth-submit" type="submit">Crear cuenta</button>
     </form>
     <div id="authMsg" class="auth-msg"></div>
     <div id="loggedActions" style="display:none;margin-top:12px"><button id="btnCerrarSesion" class="account-btn">Cerrar sesión</button></div>

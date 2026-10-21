@@ -7,7 +7,7 @@ const css=readFileSync('responsive.css','utf8');
 const permission=readFileSync('permission.js','utf8');
 const permissionMarkup=/modal.innerHTML = '([^']*)'/.exec(permission)[1];
 const permissionStyle=/style.textContent = '([^']*)'/.exec(permission)[1];
-const fixtures=['index.html','admin.html','ia.html','reader.html','reset'];
+const fixtures=['index.html','admin.html','ia.html','reader.html','terminos.html','privacidad.html','reset'];
 const sizes=[[280,800],[320,800],[375,812],[768,1024],[1024,768],[1440,900],[667,375]];
 mkdirSync('responsive-artifacts',{recursive:true});
 const browser=await chromium.launch();
@@ -17,6 +17,7 @@ try{
   assert.doesNotMatch(raw,/user-scalable=no|maximum-scale=/);
   const html=raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<link\b[^>]*>/gi,match=>{
    const href=/href="([^"]+)"/.exec(match)?.[1];
+   if(href?.startsWith('/site-footer.css'))return '<style>'+readFileSync('site-footer.css','utf8')+'</style>';
    if(href?.startsWith('/admin-assets/')&&href.endsWith('.css'))return '<style>'+readFileSync(href.slice(1),'utf8')+'</style>';
    return '';
   }).replace('</head>',file==='reset'?'</head>':'<style>'+css+'</style></head>');
@@ -38,6 +39,7 @@ try{
    };
    if(file==='reader.html')await page.evaluate(()=>{const canvas=document.querySelector('canvas');canvas.style.width='1400px';canvas.style.height='1800px';});
    await check('list');
+   const footer=page.locator('.site-footer');if(await footer.count()){await footer.scrollIntoViewIfNeeded();const links=await footer.locator('nav a').evaluateAll(els=>els.map(el=>({height:el.getBoundingClientRect().height,bottom:el.getBoundingClientRect().bottom,href:el.getAttribute('href')})));assert.equal(links.length,2);for(const link of links)assert.ok(link.height>=44);const nav=page.locator('#premiumBottomNav');if(await nav.count()){const box=await nav.boundingBox();for(const link of links)assert.ok(link.bottom<=box.y+1,'Footer link is covered by bottom navigation');}}
    if(file==='index.html'&&width>=768){const columns=await page.locator('#lista-canciones').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);assert.equal(columns,2);}
    const controls=await page.locator('button').evaluateAll(els=>els.filter(el=>el.getBoundingClientRect().width&&getComputedStyle(el).visibility!=='hidden').map(el=>({text:el.textContent,height:el.getBoundingClientRect().height})));
    for(const control of controls)assert.ok(control.height>=43,`${file}: small touch control ${control.text}`);
