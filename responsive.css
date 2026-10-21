@@ -100,3 +100,5 @@ body[data-page] .modal-card,body[data-page] .announcement-card{max-height:calc(1
 body[data-page="reader"] header{padding-top:calc(10px + var(--app-safe-top,0px))}
 body[data-page="library"] #reader[open],body[data-page="cancionero"] #permissionViewer[open]{top:calc(8px + var(--app-safe-top,0px));bottom:calc(8px + var(--app-safe-bottom,0px));margin-block:auto;height:calc(100dvh - 16px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px));max-height:calc(100dvh - 16px - var(--app-safe-top,0px) - var(--app-safe-bottom,0px))}
 body[data-page="library"] #reader:fullscreen,body[data-page="cancionero"] #permissionViewer:fullscreen{top:0;bottom:0;height:100dvh;max-height:100dvh;padding-top:calc(14px + var(--app-safe-top,0px));padding-bottom:calc(14px + var(--app-safe-bottom,0px))}
+
+body[data-page="library"] #reader[open].reader-expanded{position:fixed;inset:0;margin:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;padding-top:calc(14px + var(--app-safe-top,0px));padding-bottom:calc(14px + var(--app-safe-bottom,0px))}
