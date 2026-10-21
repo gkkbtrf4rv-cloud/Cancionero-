@@ -69,6 +69,17 @@ try{
     await page.evaluate(()=>{const d=document.querySelector('#reader');d.showModal();document.querySelector('#readerTitle').textContent='Libro de tradiciones '.repeat(5);document.querySelector('#readerStatus').textContent='Instrucciones de lectura '.repeat(8);document.querySelector('#readerContent').innerHTML='<pre>'+ 'TextoDeLibro'.repeat(150)+'</pre>';});await check('reader');await belowStatus('#closeReader');
     await page.locator('#closeReader').click({trial:true});
     const area=await page.locator('#readerContent').boundingBox();assert.ok(area.height>40,`Reader content collapsed ${width}x${height}`);
+    await page.addScriptTag({content:readFileSync('reader-fullscreen.js','utf8').replace('export function','function')+";setupReaderFullscreen(document.querySelector('#reader'),document.querySelector('#fullscreen'));"});
+    await page.locator('#fullscreen').click();
+    assert.equal(await page.locator('#fullscreen').getAttribute('aria-pressed'),'true');
+    const expanded=await page.locator('#reader').boundingBox();assert.ok(expanded.x===0&&expanded.y===0&&Math.abs(expanded.width-width)<=1&&Math.abs(expanded.height-height)<=1,'Expanded reader must fill viewport');
+    await belowStatus('#closeReader');await check('reader-expanded');
+    const expandedArea=await page.locator('#readerContent').boundingBox();assert.ok(expandedArea.height>40);
+    await page.locator('#fullscreen').click();assert.equal(await page.locator('#fullscreen').getAttribute('aria-pressed'),'false');
+    await page.locator('#fullscreen').click();await page.evaluate(()=>document.querySelector('#reader').close());
+    await page.waitForFunction(()=>!document.querySelector('#reader').classList.contains('reader-expanded'));
+    await page.evaluate(()=>document.querySelector('#reader').showModal());assert.equal(await page.locator('#fullscreen').getAttribute('aria-pressed'),'false');
+
    }
    await page.close();
   }
