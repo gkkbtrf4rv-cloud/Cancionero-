@@ -2,3 +2,7 @@
 :root{--app-safe-top:env(safe-area-inset-top,0px);--app-safe-bottom:env(safe-area-inset-bottom,0px)}
 /* iOS installed apps can report zero while the translucent status bar is visible. */
 @supports(-webkit-touch-callout:none){@media(display-mode:standalone),(display-mode:fullscreen){:root{--app-safe-top:max(59px,env(safe-area-inset-top,0px))}}}
+
+/* Paint the canvas behind the iOS status bar and overscroll area. */
+html{background-color:#090808;color-scheme:dark}
+html:has(body.theme-light){background-color:#f7f0df;color-scheme:light}
