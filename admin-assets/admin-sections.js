@@ -5,6 +5,7 @@
 
   function sectionFor(heading='') {
     const text = heading.toLowerCase();
+    if (text.includes('asistencias')) return 'asistencias';
     if (text.includes('aviso') || text.includes('pop-up')) return 'comunicacion';
     if (text.includes('evento') || text.includes('viaje')) return 'eventos';
     if (text.includes('dispositivos') || text.includes('acceso') || text.includes('solicitudes') || text.includes('integrantes')) return 'integrantes';
@@ -36,6 +37,7 @@
   nav.innerHTML = '<div class="admin-nav-scroll">' +
     '<button type="button" class="admin-nav-btn active" data-go="inicio">⌂ Inicio</button>' +
     '<button type="button" class="admin-nav-btn" data-go="comunicacion">📣 Avisos</button>' +
+    '<button type="button" class="admin-nav-btn" data-go="asistencias">✓ Asistencias</button>' +
     '<button type="button" class="admin-nav-btn" data-go="eventos">📅 Eventos</button>' +
     '<button type="button" class="admin-nav-btn" data-go="canciones">🎼 Canciones</button>' +
     '<button type="button" class="admin-nav-btn" data-go="permiso">📄 Permiso de ensayo</button>' +
@@ -49,6 +51,7 @@
   home.id = 'adminHome';
   home.innerHTML =
     '<div class="admin-home-card" data-open="comunicacion"><div class="admin-home-icon">📣</div><strong>Avisos</strong><small>Notificaciones y pop-up para integrantes.</small></div>' +
+    '<div class="admin-home-card" data-open="asistencias"><div class="admin-home-icon">✓</div><strong>Asistencias</strong><small>Tuna cada sábado y listas fijas de viajes.</small></div>' +
     '<div class="admin-home-card" data-open="eventos"><div class="admin-home-icon">📅</div><strong>Eventos</strong><small>Viajes, presentaciones, portadas y setlists.</small></div>' +
     '<div class="admin-home-card" data-open="canciones"><div class="admin-home-icon">🎼</div><strong>Canciones</strong><small>Agregar, editar, portadas y repertorio.</small></div>' +
     '<div class="admin-home-card" data-open="permiso"><div class="admin-home-icon">📄</div><strong>Permiso de ensayo</strong><small>Subir o reemplazar la autorización de FES Acatlán.</small></div>' +

@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v68";
+const CACHE_NAME = "cancionero-tuna-derecho-v69";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -6,13 +6,14 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v68', { cache: 'no-store' });
+    const fresh = await fetch('/?app-shell=v69', { cache: 'no-store' });
     if (fresh && fresh.ok) await cache.put('/', fresh.clone());
     await Promise.allSettled([
       cache.add(new Request('/manifest.json', { cache: 'reload' })),
       cache.add(new Request('/icon-192.png', { cache: 'reload' })),
       cache.add(new Request('/icon-512.png', { cache: 'reload' })),
       cache.add(new Request('/logo-tuna.webp', { cache: 'reload' })),
+      ...['/asistencias.html','/attendance.js?v=69','/attendance-page.js?v=69','/attendance.css?v=69'].map(url=>cache.add(new Request(url,{cache:'reload'}))),
       cache.add(new Request('/attendance.js', { cache: 'reload' })),
       cache.add(new Request('/responsive.css?v=63', { cache: 'reload' })),
       cache.add(new Request('/permission.js', { cache: 'reload' })),
@@ -44,11 +45,13 @@ self.addEventListener("fetch", (event) => {
   // El administrador es una página independiente. No debe recibir el shell de la app.
   if (event.request.mode === 'navigate') {
     if (url.pathname === '/reader.html') return;
+    if (url.pathname === '/asistencias.html') { event.respondWith(cacheFirst(new Request(url.origin+url.pathname))); return; }
     if (['/ia.html','/terminos.html','/privacidad.html'].includes(url.pathname)) { event.respondWith(cacheFirst(event.request)); return; }
     if (url.pathname === '/admin.html' || url.pathname === '/admin') return;
     event.respondWith(cacheFirstPage(event.request));
     return;
   }
+  if (url.origin === self.location.origin && ['/attendance.js','/attendance-page.js','/attendance.css'].includes(url.pathname)){event.respondWith((async()=>{try{const r=await fetch(event.request,{cache:'no-store'});if(r.ok){const c=await caches.open(CACHE_NAME);await c.put(event.request,r.clone());return r;}return await cacheFirst(event.request);}catch{return cacheFirst(event.request);}})());return;}
   if (url.origin === self.location.origin) event.respondWith(cacheFirst(event.request));
 });
 

@@ -595,6 +595,7 @@ body.detail-open .premium-bottom-nav{display:none}
         <p>Tuna de Derecho · FES Acatlán · música, tradición y memoria.</p>
       </div>
       <div class="premium-shortcuts">
+        <a class="premium-shortcut primary" href="/asistencias.html" style="text-decoration:none"><span class="shortcut-icon">✓</span><strong>Asistencias</strong><small>Tuna · Sábados y Colombia</small></a>
         <button class="premium-shortcut primary" type="button" onclick="location.href='/ia.html'"><span class="shortcut-icon">📚</span><strong>Biblioteca Tuna</strong><small>Busca y lee nuestros libros</small></button>
         <button class="premium-shortcut primary" type="button" id="btnPermission"><span class="shortcut-icon">📄</span><strong>Permiso de ensayo</strong><small id="permissionStatus">Autorización · FES Acatlán</small></button>
         <button class="premium-shortcut primary" type="button" data-premium-nav="songs"><span class="shortcut-icon">♫</span><strong>Repertorio</strong><small>Todas las canciones</small></button>
@@ -657,7 +658,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <div class="event-hero"><div class="event-hero-inner"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div></div>
       <div class="event-info-grid"><div class="event-info-tile"><span>◉</span><strong>Información</strong><small>Fecha, lugar y detalles del evento</small></div><div class="event-info-tile"><span>♬</span><strong>Repertorio</strong><small>Setlist preparado para este evento</small></div></div>
       <div class="event-panel" id="eventSetlistPanel" style="display:none"><h3>🎶 Setlist del evento</h3><div class="event-setlist" id="eventSetlist"></div></div>
-      <div class="event-panel" id="attendancePanel"><h3>Asistencias a ensayos</h3><div id="attendanceContent">Abre el evento con conexión para consultar tus asistencias.</div></div>
+      <div class="event-panel" id="attendancePanel"><h3>Asistencias a ensayos</h3><a id="attendanceDirectLink" class="event-action" href="/asistencias.html">Abrir lista de asistencia</a><div id="attendanceContent">Abre el evento con conexión para consultar tus asistencias.</div></div>
       <div class="event-panel" id="commentsPanel"><h3>💬 Comentarios</h3><div class="comment-list" id="eventCommentsList"></div><div class="event-comment-form" id="eventCommentForm"><textarea id="eventCommentText" maxlength="600" rows="3" placeholder="Escribe algo sobre este evento…"></textarea><button class="event-action" id="btnEventComment">Publicar comentario</button></div><div class="event-status" id="eventCommentStatus"></div></div>
       <div class="event-panel" id="photosPanel"><h3>📸 Álbum grupal</h3><div class="photo-limit" id="eventPhotoLimit"></div><div class="event-photo-tools" id="eventPhotoTools"><input id="eventPhotoFile" type="file" accept="image/*"><input id="eventPhotoCaption" type="text" maxlength="160" placeholder="Pie de foto (opcional)"><button class="event-action" id="btnEventPhoto">Subir foto</button></div><div class="event-status" id="eventPhotoStatus"></div><div class="event-gallery" id="eventGallery"></div><button class="event-action secondary" id="btnMoreEventPhotos" style="display:none;margin-top:10px">Ver más fotos</button></div>
     </section>
@@ -1146,7 +1147,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         else throw new Error('Este evento todavía no está guardado para verlo sin conexión.');
         offlineMode=true;
       }
-      EVENTO_ACTUAL=d.event; window.dispatchEvent(new CustomEvent("attendance-event",{detail:d.event.id}));
+      EVENTO_ACTUAL=d.event; document.getElementById('attendancePanel').dataset.eventId=d.event.id; document.getElementById('attendanceDirectLink').href='/asistencias.html?evento='+encodeURIComponent(d.event.id); window.dispatchEvent(new CustomEvent("attendance-event",{detail:d.event.id}));
       const hero=document.querySelector('.event-hero');
       if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl,true);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}
       $('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';
@@ -1490,7 +1491,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     await actualizarNotificaciones();
   })();
 </script>
-<script src="/permission.js"></script><script src="/attendance.js"></script>
+<script src="/permission.js"></script><script src="/attendance.js?v=69"></script>
 </body>
 </html>
 <style>
