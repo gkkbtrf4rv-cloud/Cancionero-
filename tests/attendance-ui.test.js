@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+async function renderResponse(data){const listeners={},box={innerHTML:'',querySelectorAll(){return [];}};const refresh={};const ctx={document:{getElementById:id=>id==='attendanceContent'?box:refresh,addEventListener(){}},window:{addEventListener(n,f){listeners[n]=f;}},localStorage:{getItem(){return 'token';}},navigator:{onLine:true},fetch:async()=>({ok:true,json:async()=>data}),Date};vm.runInNewContext(fs.readFileSync(new URL('../attendance.js',import.meta.url),'utf8'),ctx);listeners['attendance-event']({detail:'colombia'});await new Promise(resolve=>setImmediate(resolve));return box.innerHTML;}
+const base={serverNow:1000,account:{mote:'Tuno',email:'tuno@example.test'},members:[{active:true,confirmed:0,total:0,percentage:null}],sessions:[{id:'s',date:'2026-10-26T18:00:00Z',status:'open',expiresAt:2000,myStatus:null}]};
+test('muestra campo tras agregar integrante sin depender del reloj del teléfono',async()=>{const html=await renderResponse(base);assert(html.includes('name="code"'));assert(!html.includes('Clave vencida'));assert(html.includes('tuno@example.test'));});
+test('clave vencida explica renovar y conserva campo para no desaparecer el control',async()=>{const html=await renderResponse({...base,serverNow:3000});assert(html.includes('Clave vencida'));assert(html.includes('administrador debe renovarla'));assert(html.includes('name="code"'));});
+test('cuenta no inscrita identifica correo y conserva solicitud sujeta a validación del servidor',async()=>{const html=await renderResponse({...base,members:[]});assert(html.includes('Revisa el correo'));assert(html.includes('name="code"'));});
+test('asistencia pendiente muestra confirmación del administrador sin duplicar formulario',async()=>{const html=await renderResponse({...base,sessions:[{...base.sessions[0],myStatus:'pending'}]});assert(html.includes('Pendiente de confirmación del administrador'));assert(!html.includes('name="code"'));});
