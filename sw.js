@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v66";
+const CACHE_NAME = "cancionero-tuna-derecho-v67";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -6,13 +6,15 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v66', { cache: 'no-store' });
+    const fresh = await fetch('/?app-shell=v67', { cache: 'no-store' });
     if (fresh && fresh.ok) await cache.put('/', fresh.clone());
     await Promise.allSettled([
       cache.add(new Request('/manifest.json', { cache: 'reload' })),
       cache.add(new Request('/icon-192.png', { cache: 'reload' })),
       cache.add(new Request('/icon-512.png', { cache: 'reload' })),
       cache.add(new Request('/logo-tuna.webp', { cache: 'reload' })),
+      cache.add(new Request('/attendance.js', { cache: 'reload' })),
+      cache.add(new Request('/responsive.css?v=63', { cache: 'reload' })),
       cache.add(new Request('/permission.js', { cache: 'reload' })),
       cache.add(new Request('/safe-area.css?v=64', { cache: 'reload' })),
       cache.add(new Request('/responsive.css?v=65', { cache: 'reload' })),
@@ -26,11 +28,9 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key !== CACHE_NAME && !key.startsWith('cancionero-permission-v1-')).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key !== CACHE_NAME && !key.startsWith('cancionero-permission-v1-') && !key.startsWith('cancionero-private-')).map((key) => caches.delete(key)));
     await self.clients.claim();
-    // Fuerza a las ventanas abiertas a volver a cargar usando el shell v66.
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    await Promise.allSettled(windows.map((client) => client.navigate(client.url)));
+
   })());
 });
 

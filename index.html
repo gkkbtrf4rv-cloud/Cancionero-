@@ -657,6 +657,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <div class="event-hero"><div class="event-hero-inner"><span class="tag" id="eventDetailKind">Evento</span><h2 id="eventDetailTitle"></h2><div class="event-meta" id="eventDetailMeta"></div><div class="event-description" id="eventDetailDescription"></div><div class="countdown-box" id="eventCountdownBox" style="display:none"><div class="count-unit"><strong id="cdDays">0</strong><span>días</span></div><div class="count-unit"><strong id="cdHours">0</strong><span>horas</span></div><div class="count-unit"><strong id="cdMinutes">0</strong><span>min</span></div><div class="count-unit"><strong id="cdSeconds">0</strong><span>seg</span></div></div></div></div>
       <div class="event-info-grid"><div class="event-info-tile"><span>◉</span><strong>Información</strong><small>Fecha, lugar y detalles del evento</small></div><div class="event-info-tile"><span>♬</span><strong>Repertorio</strong><small>Setlist preparado para este evento</small></div></div>
       <div class="event-panel" id="eventSetlistPanel" style="display:none"><h3>🎶 Setlist del evento</h3><div class="event-setlist" id="eventSetlist"></div></div>
+      <div class="event-panel" id="attendancePanel"><h3>Asistencias a ensayos</h3><div id="attendanceContent">Abre el evento con conexión para consultar tus asistencias.</div></div>
       <div class="event-panel" id="commentsPanel"><h3>💬 Comentarios</h3><div class="comment-list" id="eventCommentsList"></div><div class="event-comment-form" id="eventCommentForm"><textarea id="eventCommentText" maxlength="600" rows="3" placeholder="Escribe algo sobre este evento…"></textarea><button class="event-action" id="btnEventComment">Publicar comentario</button></div><div class="event-status" id="eventCommentStatus"></div></div>
       <div class="event-panel" id="photosPanel"><h3>📸 Álbum grupal</h3><div class="photo-limit" id="eventPhotoLimit"></div><div class="event-photo-tools" id="eventPhotoTools"><input id="eventPhotoFile" type="file" accept="image/*"><input id="eventPhotoCaption" type="text" maxlength="160" placeholder="Pie de foto (opcional)"><button class="event-action" id="btnEventPhoto">Subir foto</button></div><div class="event-status" id="eventPhotoStatus"></div><div class="event-gallery" id="eventGallery"></div><button class="event-action secondary" id="btnMoreEventPhotos" style="display:none;margin-top:10px">Ver más fotos</button></div>
     </section>
@@ -1145,7 +1146,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         else throw new Error('Este evento todavía no está guardado para verlo sin conexión.');
         offlineMode=true;
       }
-      EVENTO_ACTUAL=d.event;
+      EVENTO_ACTUAL=d.event; window.dispatchEvent(new CustomEvent("attendance-event",{detail:d.event.id}));
       const hero=document.querySelector('.event-hero');
       if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl,true);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}
       $('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';
@@ -1250,7 +1251,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   $('btnCuenta').onclick=()=>{ settingsPanel.classList.remove('open'); authModal.classList.add('open'); $('loggedActions').style.display=currentUser?'block':'none'; formLogin.style.display=currentUser?'none':'grid'; formRegistro.style.display='none'; };
 
   async function authRequest(url,payload){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const d=await r.json().catch(()=>({})); if(!r.ok){ const extra=d.detail?` — ${d.detail}`:''; throw new Error((d.error||'Ocurrió un error')+extra); } return d; }
-  formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
+  formLogin.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Entrando…'; const d=await authRequest('/api/login',{email:$('loginEmail').value,password:$('loginPass').value}); localStorage.setItem('cancionero_token',d.token); currentUser=d.user; guardarUsuarioOffline(currentUser); authMsg.className='auth-msg ok'; authMsg.textContent=d.user.approved?`Bienvenido, ${d.user.mote}.`:`Cuenta encontrada. Aún está pendiente de autorización.`; renderCuenta(); setTimeout(()=>authModal.classList.remove('open'),500); await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   formRegistro.addEventListener('submit',async e=>{e.preventDefault(); try{authMsg.textContent='Creando cuenta…'; const d=await authRequest('/api/register',{mote:$('regMote').value,email:$('regEmail').value,password:$('regPass').value}); await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token'); currentUser=null; authMsg.className='auth-msg ok'; authMsg.textContent=`✅ Cuenta creada para ${d.user.mote}. El correo de verificación fue aceptado por el servicio de correo. Revisa ${d.user.email} (también Spam/No deseado) y pulsa el enlace de verificación.`; renderCuenta(); setTab(false); $('loginEmail').value=d.user.email; await aplicarAcceso(); await actualizarNotificaciones();}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnRecuperarClave').addEventListener('click',async()=>{
     const emailInput=$('loginEmail'), button=$('btnRecuperarClave');
@@ -1283,6 +1284,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         canciones:Array.isArray(data.canciones)?data.canciones:[],
         eventos:Array.isArray(data.eventos)?data.eventos:[],
         popup:data.popup||null,
+        permission:data.permission||null,
         savedAt:Date.now()
       }));
       return true;
@@ -1303,7 +1305,8 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   async function restoreSession(){
     if(!token()){renderCuenta();return;}
     try{
-      const r=await fetch('/api/me',{headers:authHeaders(),cache:'no-store'});
+      if(!navigator.onLine) throw new Error('offline');
+      const r=await fetch('/api/me',{headers:authHeaders(),cache:'no-store',signal:AbortSignal.timeout(8000)});
       if(r.status===401){
         await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');
         localStorage.removeItem(USER_CACHE_KEY);
@@ -1344,7 +1347,8 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     if(cancioneroLoaded && !forzar) return;
     sincronizando=true;
     try{
-      const r=await fetch('/api/cancionero',{headers:authHeaders(),cache:'no-store'});
+      if(!navigator.onLine) throw new Error('offline');
+      const r=await fetch('/api/cancionero',{headers:authHeaders(),cache:'no-store',signal:AbortSignal.timeout(10000)});
       const d=await r.json().catch(()=>({}));
       if(!r.ok) {
         if(r.status===401 || r.status===403) throw Object.assign(new Error(d.error||'Acceso no autorizado'),{authError:true});
@@ -1486,7 +1490,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     await actualizarNotificaciones();
   })();
 </script>
-<script src="/permission.js"></script>
+<script src="/permission.js"></script><script src="/attendance.js"></script>
 </body>
 </html>
 <style>

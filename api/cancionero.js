@@ -1,3 +1,4 @@
+import { handleAttendance } from '../lib/attendance.js';
 import crypto from 'crypto';
 import { Readable } from 'node:stream';
 import { getSessionUser } from '../lib/auth.js';
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       const action=req.body?.action;
+      if(String(action||'').startsWith('attendance-')) return await handleAttendance(req,res);
       const adminActions=new Set(['permission-admin','permission-upload','set-popup','clear-popup','get-popup-admin','list-songs','list-custom-songs','save-song','save-custom-song','delete-song','delete-custom-song','get-song-cover-admin','list-events-admin','save-event','delete-event','library-list','library-upload','library-delete','library-upload-start','library-upload-finish','library-upload-abort','list','upload','delete']);
       if(adminActions.has(action)){
         if(!adminOk(req.body?.password)) return res.status(401).json({error:'Contraseña incorrecta'});
