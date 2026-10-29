@@ -316,4 +316,10 @@
   });
 
   showSection(localStorage.getItem('admin_section_v2') || 'inicio');
+  const uiPaths={comunicacion:'<path d="M4 9v6h4l8 4V5L8 9zM8 15l2 6M20 9v6"/>',asistencias:'<path d="m5 12 4 4L20 5M4 4h6M4 20h16"/>',eventos:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/>',canciones:'<path d="M9 18V5l11-2v13M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/>',permiso:'<path d="M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6"/>',biblioteca:'<path d="M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3zM12 6v16"/>',integrantes:'<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5"/>'};
+  for(const tile of home.querySelectorAll('.admin-home-card')){
+    const node=tile.querySelector('.admin-home-icon'),path=uiPaths[tile.dataset.open]||uiPaths.biblioteca;
+    if(node)node.innerHTML='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';
+  }
+  for(const button of nav.querySelectorAll('.admin-nav-btn'))button.textContent=button.textContent.replace(/^[^\p{L}\p{N}]+/u,'');
 })();
