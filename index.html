@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Cancionero Tuna">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cinzel:wght@600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Cinzel:wght@600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --vino-oscuro:#4a0d16;
@@ -570,7 +570,9 @@ body.detail-open .premium-bottom-nav{display:none}
   .event-setlist{display:grid;gap:8px}.event-setlist-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:11px;border:1px solid rgba(228,200,116,.16);background:rgba(255,255,255,.045);cursor:pointer}.event-setlist-item .num{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(201,162,39,.16);color:var(--dorado);font:800 11px var(--font-mono)}.event-setlist-item strong{flex:1;color:var(--marfil);font-size:14px}.event-setlist-item small{display:block;color:var(--dorado-suave);font:10px var(--font-mono);margin-top:2px}.event-setlist-item .go{color:var(--dorado);font-size:18px}
 </style>
   <link rel="preload" href="/logo-tuna.webp" as="image" type="image/webp">
-<link rel="stylesheet" href="/responsive.css?v=63"><link rel="stylesheet" href="/site-footer.css?v=63"><script src="/site-footer.js?v=61" defer></script><link rel="stylesheet" href="/safe-area.css?v=64"></head>
+<link rel="stylesheet" href="/responsive.css?v=63"><link rel="stylesheet" href="/site-footer.css?v=63"><script src="/site-footer.js?v=61" defer></script><link rel="stylesheet" href="/safe-area.css?v=64"><style>
+.home-resources{margin:16px 0 24px;display:grid;gap:12px}.home-permission{width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:12px;text-align:left;align-items:center;padding:18px;background:linear-gradient(120deg,#29201a,#171313);border:1px solid rgba(213,173,90,.45);border-radius:16px;color:#f4ead4;cursor:pointer}.home-permission .resource-icon{font-size:26px;color:#d5ad5a}.home-permission strong{display:block;font:700 23px Georgia,serif;margin:4px 0}.home-permission small{color:#d5ad5a;font:600 9px system-ui;letter-spacing:1.3px}.home-permission #permissionStatus{display:block;font:12px/1.5 system-ui;color:#c4b499}.home-tools{border:1px solid rgba(213,173,90,.2);border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}.home-tools summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:16px 18px;font:600 14px system-ui;color:var(--marfil);cursor:pointer}.home-tools summary::-webkit-details-marker{display:none}.home-tools a,.home-tools button{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;width:100%;padding:15px 18px;text-align:left;background:transparent;border:0;border-top:1px solid rgba(213,173,90,.12);border-radius:0;text-decoration:none;color:var(--marfil);cursor:pointer}.home-tools strong{display:block;font:600 14px system-ui}.home-tools small{display:block;font:12px system-ui;color:#b9a98e;margin-top:4px}.offline-settings{padding:14px 0;border-top:1px solid rgba(213,173,90,.2);margin-top:14px}.offline-settings p{font:12px/1.5 system-ui;color:inherit;opacity:.8}.settings-panel{max-height:calc(100dvh - 100px);overflow-y:auto}body.theme-light .home-permission{background:#faf5eb;color:#31261b}body.theme-light .home-tools small,body.theme-light .home-permission #permissionStatus{color:#665842}
+</style></head>
 <body data-page="cancionero">
 <div id="splashScreen" class="splash-screen"><div class="splash-inner"><div class="splash-emblem"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"></div><div class="splash-kicker">Tradición · Música · Hermandad</div><div class="splash-title">Cancionero de Tuna</div><div class="splash-rule"><span>✦</span></div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
@@ -594,15 +596,13 @@ body.detail-open .premium-bottom-nav{display:none}
         <h2>Cancionero de Tuna</h2>
         <p>Tuna de Derecho · FES Acatlán · música, tradición y memoria.</p>
       </div>
-      <div class="premium-shortcuts">
-<button class="premium-shortcut" id="btnOfflinePrepare" type="button"><span class="shortcut-icon">↓</span><strong>Guardar sin conexión</strong><small id="offlineReadyStatus">Comprobar copia en este dispositivo</small></button>
-        <a class="premium-shortcut primary" href="/asistencias.html" style="text-decoration:none"><span class="shortcut-icon">✓</span><strong>Asistencias</strong><small>Tuna · Sábados y Colombia</small></a>
-        <button class="premium-shortcut primary" type="button" onclick="location.href='/ia.html'"><span class="shortcut-icon">📚</span><strong>Biblioteca Tuna</strong><small>Busca y lee nuestros libros</small></button>
-        <button class="premium-shortcut primary" type="button" id="btnPermission"><span class="shortcut-icon">📄</span><strong>Permiso de ensayo</strong><small id="permissionStatus">Autorización · FES Acatlán</small></button>
-        <button class="premium-shortcut primary" type="button" data-premium-nav="songs"><span class="shortcut-icon">♫</span><strong>Repertorio</strong><small>Todas las canciones</small></button>
-        <button class="premium-shortcut" type="button" data-premium-nav="favorites"><span class="shortcut-icon">♡</span><strong>Favoritos</strong><small>Tus canciones guardadas</small></button>
-        <button class="premium-shortcut" type="button" data-premium-nav="events"><span class="shortcut-icon">▣</span><strong>Eventos</strong><small>Viajes y presentaciones</small></button>
-        <button class="premium-shortcut" type="button" data-premium-nav="past"><span class="shortcut-icon">◷</span><strong>Recuerdos</strong><small>Eventos y álbumes pasados</small></button>
+      <div class="home-resources">
+        <button type="button" id="btnPermission" class="home-permission"><span class="resource-icon">▤</span><span><small>DOCUMENTO DE ACCESO · FES ACATLÁN</small><strong>Permiso de ensayo</strong><span id="permissionStatus">Comprobando copia del documento…</span></span><span aria-hidden="true">›</span></button>
+        <details class="home-tools"><summary>Herramientas de la Tuna <span aria-hidden="true">⌄</span></summary><div>
+          <a href="/asistencias.html"><span>✓</span><span><strong>Asistencias</strong><small>Ensayos de la Tuna y Colombia</small></span><span>›</span></a>
+          <a href="/ia.html"><span>▤</span><span><strong>Biblioteca Tuna</strong><small>Libros y documentos</small></span><span>›</span></a>
+          <button type="button" data-premium-nav="past"><span>◷</span><span><strong>Recuerdos</strong><small>Eventos y álbumes pasados</small></span><span>›</span></button>
+        </div></details>
       </div>
       <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
       <div class="favorites-zone" id="favoritesZone">
@@ -684,6 +684,7 @@ body.detail-open .premium-bottom-nav{display:none}
   </div>
   <div class="settings-sep"></div>
   <div class="theme-control"><label for="themeSelect">🎨 Apariencia</label><select id="themeSelect" class="theme-select"><option value="default">Predeterminado · vino</option><option value="dark">Modo oscuro</option><option value="light">Modo claro</option></select></div>
+  <div class="offline-settings"><strong>Uso sin conexión</strong><p>Canciones y permiso de ensayo guardados en este dispositivo.</p><button id="btnOfflinePrepare" class="account-btn" type="button">Guardar canciones y permiso</button><p id="offlineReadyStatus" role="status">Pulsa para comprobar y guardar la copia.</p></div>
   <div id="syncStatus" class="notif-status" style="display:block">🔄 Comprobando versión…</div>
   <div id="notifStatus" class="notif-status"></div>
   <button id="btnNotificaciones" class="install-btn notif-btn" style="display:none;">🔔 Activar notificaciones</button>
@@ -1234,7 +1235,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       sessionStorage.setItem('sw_recargado', '1');
       location.reload();
     });
-    window.addEventListener('load', async () => {
+    (async () => {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
         // Revisar solo el archivo pequeño del Service Worker en cada apertura.
@@ -1242,7 +1243,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         reg.update().catch(()=>{});
         setTimeout(() => sessionStorage.removeItem('sw_recargado'), 5000);
       } catch (err) { console.warn('No se pudo registrar el Service Worker:', err); }
-    });
+    })();
   }
   window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); eventoInstalacion=e; btnInstalar.style.display='block'; });
   btnInstalar.addEventListener('click',async()=>{ if(!eventoInstalacion)return; eventoInstalacion.prompt(); await eventoInstalacion.userChoice; eventoInstalacion=null; btnInstalar.style.display='none'; });
@@ -1392,12 +1393,15 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       if(result?.offline||!result?.offlineSaved)throw Error('No se pudo guardar la copia. Reintenta con conexión.');
       await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
       await navigator.serviceWorker.ready;
-      const shell=await caches.open('cancionero-tuna-derecho-v75');
-      if(!await shell.match('/')||!await shell.match('/offline-data.js?v=75'))throw Error('La actualización sigue instalándose. Espera la recarga y pulsa de nuevo.');
-      if(!await window.cancioneroOffline.read(currentUser))throw Error('No se pudo comprobar la copia.');
+      const shell=await caches.open('cancionero-tuna-derecho-v77');
+      if(!await shell.match('/')||!await shell.match('/offline.html')||!await shell.match('/offline-data.js?v=75'))throw Error('La actualización sigue instalándose. Espera la recarga y pulsa de nuevo.');
+      const snapshot=await window.cancioneroOffline.read(currentUser);
+      if(!snapshot)throw Error('No se pudo comprobar la copia.');
+      await window.setRehearsalPermission(snapshot.permission);
+      if(snapshot.permission)await window.prepareRehearsalPermission();
       navigator.storage?.persist?.().catch(()=>{});
-      label.textContent=`Disponible sin conexión · ${CANCIONES.length} canciones`;
-      statusSync('✅ Cancionero preparado para abrir sin conexión en este dispositivo.');
+      label.textContent=snapshot.permission?`Disponible sin conexión · ${CANCIONES.length} canciones y permiso de ensayo`:`${CANCIONES.length} canciones guardadas. Aún no hay permiso publicado.`;
+      statusSync(snapshot.permission?'✅ Canciones y permiso disponibles sin conexión.':'✅ Canciones disponibles sin conexión · permiso pendiente de subir.');
     }catch(err){label.textContent=err.message;}finally{button.disabled=false;}
   };
 
@@ -1503,7 +1507,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     await actualizarNotificaciones();
   })();
 </script>
-<script src="/permission.js"></script><script src="/attendance.js?v=74"></script>
+<script src="/permission.js?v=76"></script><script src="/attendance.js?v=74"></script>
 </body>
 </html>
 <style>

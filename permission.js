@@ -28,7 +28,7 @@
     let cache = null, response = null;
     if('caches' in window) { try { cache = await caches.open(name); response = await cache.match(target); } catch {} }
     if(!response) {
-      response = await fetch(target, { headers:authHeaders(), cache:'no-store' });
+      response = await fetch(target, { headers:authHeaders(), cache:'no-store',signal:AbortSignal.timeout(15000) });
       if(!response.ok) {
         if(response?.status===401 || response.status===403) await window.clearRehearsalPermission();
         throw new Error(response.status===404 ? 'El permiso cambió. Conéctate y actualiza el Cancionero.' : 'No se pudo abrir el permiso. Revisa tu sesión o conexión.');
@@ -43,9 +43,21 @@
     }
     const blob = await response.blob();
     if(epoch !== generation || userKey() !== owner) { if(cache && doc?.url !== target) await cache.delete(target).catch(() => {}); throw new Error('La sesión cambió.'); }
+    if(!blob.size || (doc.size && blob.size!==doc.size))throw new Error('El permiso no se descargó completo. Conéctate y vuelve a guardarlo.');
     status.textContent = cache ? 'Disponible sin conexión' : 'Disponible · requiere conexión';
     return blob;
   }
+  window.prepareRehearsalPermission = async () => {
+    if(!doc)throw new Error('Todavía no hay un permiso publicado.');
+    await documentBlob();
+    const cache=await caches.open(cacheName());
+    const saved=await cache.match(doc.url);
+    if(!saved)throw new Error('No se pudo guardar el permiso para usarlo sin conexión.');
+    const blob=await saved.blob();
+    if(!blob.size || (doc.size && blob.size!==doc.size))throw new Error('La copia del permiso está incompleta.');
+    status.textContent='Disponible sin conexión';
+    return true;
+  };
   window.setRehearsalPermission = async value => {
     if(doc?.version !== value?.version && objectUrl) release();
     generation++; doc = value || null;
@@ -65,7 +77,7 @@
     try {
       if(navigator.onLine) {
         let response;
-        try { response = await fetch('/api/cancionero?action=permission', {headers:authHeaders(),cache:'no-store'}); }
+        try { response = await fetch('/api/cancionero?action=permission', {headers:authHeaders(),cache:'no-store',signal:AbortSignal.timeout(15000)}); }
         catch(err) { if(!doc) throw err; }
         if(response?.status===401 || response?.status===403) { await window.clearRehearsalPermission(); throw new Error('Inicia sesión con una cuenta autorizada.'); }
         if(response && !response.ok) throw new Error('No se pudo comprobar el permiso vigente.');
