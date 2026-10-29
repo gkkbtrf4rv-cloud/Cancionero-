@@ -572,7 +572,7 @@ body.detail-open .premium-bottom-nav{display:none}
   <link rel="preload" href="/logo-tuna.webp" as="image" type="image/webp">
 <link rel="stylesheet" href="/responsive.css?v=63"><link rel="stylesheet" href="/site-footer.css?v=63"><script src="/site-footer.js?v=61" defer></script><link rel="stylesheet" href="/safe-area.css?v=64"><style>
 .home-resources{margin:16px 0 24px;display:grid;gap:12px}.home-permission{width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:12px;text-align:left;align-items:center;padding:18px;background:linear-gradient(120deg,#29201a,#171313);border:1px solid rgba(213,173,90,.45);border-radius:16px;color:#f4ead4;cursor:pointer}.home-permission .resource-icon{font-size:26px;color:#d5ad5a}.home-permission strong{display:block;font:700 23px Georgia,serif;margin:4px 0}.home-permission small{color:#d5ad5a;font:600 9px system-ui;letter-spacing:1.3px}.home-permission #permissionStatus{display:block;font:12px/1.5 system-ui;color:#c4b499}.home-tools{border:1px solid rgba(213,173,90,.2);border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}.home-tools summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:16px 18px;font:600 14px system-ui;color:var(--marfil);cursor:pointer}.home-tools summary::-webkit-details-marker{display:none}.home-tools a,.home-tools button{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;width:100%;padding:15px 18px;text-align:left;background:transparent;border:0;border-top:1px solid rgba(213,173,90,.12);border-radius:0;text-decoration:none;color:var(--marfil);cursor:pointer}.home-tools strong{display:block;font:600 14px system-ui}.home-tools small{display:block;font:12px system-ui;color:#b9a98e;margin-top:4px}.offline-settings{padding:14px 0;border-top:1px solid rgba(213,173,90,.2);margin-top:14px}.offline-settings p{font:12px/1.5 system-ui;color:inherit;opacity:.8}.settings-panel{max-height:calc(100dvh - 100px);overflow-y:auto}body.theme-light .home-permission{background:#faf5eb;color:#31261b}body.theme-light .home-tools small,body.theme-light .home-permission #permissionStatus{color:#665842}
-</style><link rel="stylesheet" href="/redesign.css?v=81"></head>
+</style><link rel="stylesheet" href="/redesign.css?v=83"></head>
 <body data-page="cancionero" data-ui="app" data-main-view="home">
 <div id="splashScreen" class="splash-screen"><div class="splash-inner"><div class="splash-emblem"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"></div><div class="splash-kicker">Tradición · Música · Hermandad</div><div class="splash-title">Cancionero de Tuna</div><div class="splash-rule"><span>✦</span></div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
@@ -591,6 +591,7 @@ body.detail-open .premium-bottom-nav{display:none}
 
   <main>
     <section id="vista-lista">
+      <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
       <div class="premium-welcome" id="inicioPremium">
         <div class="hello">Tuna de Derecho · FES Acatlán</div>
         <h2>La música<br><em>nos reúne.</em></h2>
@@ -604,7 +605,6 @@ body.detail-open .premium-bottom-nav{display:none}
           <button type="button" data-premium-nav="past"><span>◷</span><span><strong>Recuerdos</strong><small>Eventos y álbumes pasados</small></span><span>›</span></button>
         </div></details>
       </div>
-      <div class="events-zone" id="eventsZone"><div class="events-zone-head"><h2>Próximo evento</h2></div><div id="lista-eventos"><div class="events-empty">No hay eventos próximos publicados.</div></div></div>
       <div class="favorites-zone" id="favoritesZone">
         <div class="favorites-page-head">
           <div class="favorites-page-title"><h2>♡ Favoritos</h2><span id="favoritesCount">0 guardadas</span></div>
@@ -804,10 +804,22 @@ function buildEventCard(evento,{past=false}={}){
 }
 function featuredCountdownParts(value){const diff=new Date(value).getTime()-Date.now();if(!Number.isFinite(diff)||diff<=0)return{d:0,h:0,m:0,s:0};return{d:Math.floor(diff/86400000),h:Math.floor(diff%86400000/3600000),m:Math.floor(diff%3600000/60000),s:Math.floor(diff%60000/1000)};}
 let FEATURED_TIMER=null;
+let EVENT_STAMP_ID=0;
+function isColombiaEvent(evento){return /manizales|colombia/i.test([evento?.title,evento?.location,evento?.id].join(' '));}
+function eventHeroCover(evento){return isColombiaEvent(evento)?'/assets/manizales-hero.webp?v=83':evento.coverImageUrl;}
+function buildEventStamp(evento){
+  if(!isColombiaEvent(evento))return null;
+  const stamp=document.createElement('div');stamp.className='event-passport';stamp.setAttribute('aria-hidden','true');
+  const id='passport-arc-'+(++EVENT_STAMP_ID),year=new Date(evento.date).getFullYear();
+  stamp.innerHTML=`<svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><path id="${id}" d="M 29,116 A 82,82 0 1,1 191,116"/></defs><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="110" cy="110" r="100"/><circle cx="110" cy="110" r="94"/><circle cx="110" cy="110" r="74" stroke-dasharray="1 5"/><path d="m42 137 39-46 22 24 24-32 49 54M60 127l21-22 10 12 12-2M108 105l19-22 13 27 10-1M47 151h125"/><path d="M137 146v-29h27v29M133 146h35M140 117v-25l4 8 3-8v25m7 0V86l4-17 3 17v31M149 146v-11a4 4 0 0 1 8 0v11M142 125v5m17-5v5M73 73l26-15m-13 7-11-6m12 7 1 12m-14-7-5-2"/><path d="M8 162c-25-12-32 10-57 0m58 9c-25-12-32 10-57 0m60 9c-25-12-32 10-57 0"/></g><text fill="currentColor" font-family="system-ui,sans-serif" font-size="13" font-weight="650" letter-spacing="2"><textPath href="#${id}" startOffset="50%" text-anchor="middle">MANIZALES · COLOMBIA</textPath></text><text x="110" y="178" fill="currentColor" font-family="system-ui,sans-serif" font-size="18" font-weight="700" letter-spacing="4" text-anchor="middle">${Number.isFinite(year)?year:''}</text><path d="m47 169 2 4 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1m123-4 2 4 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1" fill="currentColor"/></svg>`;
+  return stamp;
+}
 function updateFeaturedCountdown(){const box=document.querySelector('[data-featured-date]');if(!box)return;const p=featuredCountdownParts(box.dataset.featuredDate);for(const [k,v] of Object.entries(p)){const el=box.querySelector(`[data-unit="${k}"]`);if(el)el.textContent=String(v).padStart(2,'0');}}
 function buildFeaturedEvent(evento){
   const wrap=document.createElement('div');wrap.className='featured-event';
-  if(evento.coverImageUrl){const bg=document.createElement('div');bg.className='featured-event-bg';wrap.appendChild(bg);setPrivateBackground(bg,evento.coverImageUrl,true);}
+  const cover=eventHeroCover(evento);
+  if(cover){const bg=document.createElement('div');bg.className='featured-event-bg';wrap.appendChild(bg);setPrivateBackground(bg,cover,true);}
+  const stamp=buildEventStamp(evento);if(stamp){wrap.classList.add('has-passport');wrap.appendChild(stamp);}
   const content=document.createElement('div');content.className='featured-event-content';
   const top=document.createElement('div');top.className='featured-top';top.innerHTML=`<span class="featured-label">Próximo encuentro</span><span class="featured-kind">${evento.kind||'Evento'}</span>`;
   const title=document.createElement('h3');title.className='featured-title';title.textContent=evento.title;
@@ -821,6 +833,7 @@ function renderEventos(){
   clearInterval(FEATURED_TIMER);FEATURED_TIMER=null;
   const visibles=[...EVENTOS].filter(e=>e.visible!==false);
   const proximos=visibles.filter(e=>!eventHasPassed(e)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  document.body.classList.toggle('has-featured-event',proximos.length>0);
   const pasados=visibles.filter(eventHasPassed).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   $listaEventos.innerHTML='';
   if(!proximos.length)$listaEventos.innerHTML='<div class="events-empty">No hay eventos próximos publicados.</div>';
@@ -1138,7 +1151,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       }
       EVENTO_ACTUAL=d.event; document.getElementById('attendancePanel').dataset.eventId=d.event.id; document.getElementById('attendanceDirectLink').href='/asistencias.html?evento='+encodeURIComponent(d.event.id); window.dispatchEvent(new CustomEvent("attendance-event",{detail:d.event.id}));
       const hero=document.querySelector('.event-hero');
-      if(d.event.coverImageUrl){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,d.event.coverImageUrl,true);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}
+      const heroCover=eventHeroCover(d.event);if(heroCover){hero.classList.add('has-cover');hero.style.backgroundImage='';setPrivateBackground(hero,heroCover,true);}else{hero.classList.remove('has-cover');hero.style.backgroundImage='';}hero.querySelector('.event-passport')?.remove();const stamp=buildEventStamp(d.event);hero.classList.toggle('has-passport',!!stamp);if(stamp)hero.appendChild(stamp);
       $('eventDetailKind').textContent=d.event.kind||'Evento';$('eventDetailTitle').textContent=d.event.title||'';const past=eventHasPassed(d.event);$('eventDetailMeta').textContent=`📅 ${eventDateText(d.event.date)}${d.event.endDate?' — '+eventDateText(d.event.endDate):''}${d.event.location?' · 📍 '+d.event.location:''}${past?' · 🕰️ Evento pasado':''}`;$('eventDetailDescription').textContent=d.event.description||'';
       renderEventSetlist(d.event);
       renderEventComments(d.comments||[]);
@@ -1379,7 +1392,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       if(result?.offline||!result?.offlineSaved)throw Error('No se pudo guardar la copia. Reintenta con conexión.');
       await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
       await navigator.serviceWorker.ready;
-      const shell=await caches.open('cancionero-tuna-derecho-v81');
+      const shell=await caches.open('cancionero-tuna-derecho-v83');
       if(!await shell.match('/')||!await shell.match('/offline.html')||!await shell.match('/offline-data.js?v=75'))throw Error('La actualización sigue instalándose. Espera la recarga y pulsa de nuevo.');
       const snapshot=await window.cancioneroOffline.read(currentUser);
       if(!snapshot)throw Error('No se pudo comprobar la copia.');

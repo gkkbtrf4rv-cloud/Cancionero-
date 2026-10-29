@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v81";
+const CACHE_NAME = "cancionero-tuna-derecho-v83";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -6,11 +6,12 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v81', { cache: 'no-store' });
+    const fresh = await fetch('/?app-shell=v83', { cache: 'no-store' });
     if (!fresh?.ok) throw new Error('No se pudo guardar el arranque.');
     await cache.put('/', fresh.clone());
-    await cache.addAll(['/themes.js?v=81','/redesign.css?v=81','/offline.html','/offline-data.js?v=75','/permission.js?v=76','/attendance.js?v=74','/responsive.css?v=63','/safe-area.css?v=64','/site-footer.css?v=63','/site-footer.js?v=61']);
+    await cache.addAll(['/themes.js?v=81','/redesign.css?v=83','/offline.html','/offline-data.js?v=75','/permission.js?v=76','/attendance.js?v=74','/responsive.css?v=63','/safe-area.css?v=64','/site-footer.css?v=63','/site-footer.js?v=61']);
     await Promise.allSettled([
+      cache.add(new Request('/assets/manizales-hero.webp?v=83', { cache: 'reload' })),
       cache.add(new Request('/manifest.json', { cache: 'reload' })),
       cache.add(new Request('/icon-192.png', { cache: 'reload' })),
       cache.add(new Request('/icon-512.png', { cache: 'reload' })),
