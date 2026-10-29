@@ -1,4 +1,4 @@
-const CACHE_NAME = "cancionero-tuna-derecho-v74";
+const CACHE_NAME = "cancionero-tuna-derecho-v75";
 const UPDATE_MARKER_URL = "/__cancionero_update_marker__";
 const ASSETS_TO_CACHE = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -6,8 +6,10 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // El cache-bust evita reutilizar una copia HTTP antigua del shell.
-    const fresh = await fetch('/?app-shell=v74', { cache: 'no-store' });
-    if (fresh && fresh.ok) await cache.put('/', fresh.clone());
+    const fresh = await fetch('/?app-shell=v75', { cache: 'no-store' });
+    if (!fresh?.ok) throw new Error('No se pudo guardar el arranque.');
+    await cache.put('/', fresh.clone());
+    await cache.addAll(['/offline-data.js?v=75','/permission.js','/attendance.js?v=74','/responsive.css?v=63','/safe-area.css?v=64','/site-footer.css?v=63','/site-footer.js?v=61']);
     await Promise.allSettled([
       cache.add(new Request('/manifest.json', { cache: 'reload' })),
       cache.add(new Request('/icon-192.png', { cache: 'reload' })),
@@ -29,7 +31,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key !== CACHE_NAME && !key.startsWith('cancionero-permission-v1-') && !key.startsWith('cancionero-private-')).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith('cancionero-tuna-derecho-') && key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
 
   })());

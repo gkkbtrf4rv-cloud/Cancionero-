@@ -595,6 +595,7 @@ body.detail-open .premium-bottom-nav{display:none}
         <p>Tuna de Derecho · FES Acatlán · música, tradición y memoria.</p>
       </div>
       <div class="premium-shortcuts">
+<button class="premium-shortcut" id="btnOfflinePrepare" type="button"><span class="shortcut-icon">↓</span><strong>Guardar sin conexión</strong><small id="offlineReadyStatus">Comprobar copia en este dispositivo</small></button>
         <a class="premium-shortcut primary" href="/asistencias.html" style="text-decoration:none"><span class="shortcut-icon">✓</span><strong>Asistencias</strong><small>Tuna · Sábados y Colombia</small></a>
         <button class="premium-shortcut primary" type="button" onclick="location.href='/ia.html'"><span class="shortcut-icon">📚</span><strong>Biblioteca Tuna</strong><small>Busca y lee nuestros libros</small></button>
         <button class="premium-shortcut primary" type="button" id="btnPermission"><span class="shortcut-icon">📄</span><strong>Permiso de ensayo</strong><small id="permissionStatus">Autorización · FES Acatlán</small></button>
@@ -731,6 +732,7 @@ body.detail-open .premium-bottom-nav{display:none}
 </div>
 
 
+<script src="/offline-data.js?v=75"></script>
 <script>
 
 // Apariencia: preferencia local por dispositivo.
@@ -1202,7 +1204,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   }
   async function actualizarSiHayAvisoPendiente(versionForzada=null){
     if(!navigator.onLine || !currentUser?.approved || !token()) return false;
-    const offline=leerCancioneroOffline();
+    const offline=await leerCancioneroOffline();
     const marca=await leerMarcaActualizacion();
     const objetivo=versionForzada || marca?.version || null;
     if(!objetivo || objetivo===offline?.version) {
@@ -1212,7 +1214,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     statusSync('🆕 Hay una actualización nueva · descargando…');
     try{
       await buscarActualizacion();
-      const nueva=leerCancioneroOffline();
+      const nueva=await leerCancioneroOffline();
       if(nueva?.version===objetivo || (nueva?.version && nueva?.version!==offline?.version)){
         await borrarMarcaActualizacion();
         statusSync(`✅ Cancionero actualizado · versión ${nueva.version}`);
@@ -1263,7 +1265,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     finally{button.disabled=false;}
   });
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
-  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
+  $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.cancioneroOffline?.clear();await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
   function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
@@ -1278,24 +1280,14 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   function leerUsuarioOffline(){
     try { return JSON.parse(localStorage.getItem(USER_CACHE_KEY)||'null')?.user || null; } catch { return null; }
   }
-  function guardarCancioneroOffline(data){
-    try {
-      localStorage.setItem(OFFLINE_DATA_KEY, JSON.stringify({
-        version:data.version||'sin-version',
-        canciones:Array.isArray(data.canciones)?data.canciones:[],
-        eventos:Array.isArray(data.eventos)?data.eventos:[],
-        popup:data.popup||null,
-        permission:data.permission||null,
-        savedAt:Date.now()
-      }));
-      return true;
-    } catch(err) {
-      console.warn('No se pudo guardar la copia offline:',err);
-      return false;
-    }
+  async function guardarCancioneroOffline(data){
+    try{await window.cancioneroOffline.save(data,currentUser);return true;}
+    catch(err){console.warn('No se pudo guardar la copia offline:',err);return false;}
   }
-  function leerCancioneroOffline(){
-    try { return JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY)||'null'); } catch { return null; }
+  async function leerCancioneroOffline(){
+    const stored=await window.cancioneroOffline?.read(currentUser);
+    if(stored)return stored;
+    try{return JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY)||'null');}catch{return null;}
   }
   function fechaCorta(ts){
     if(!ts) return '';
@@ -1355,11 +1347,12 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
         if(r.status===401 || r.status===403) throw Object.assign(new Error(d.error||'Acceso no autorizado'),{authError:true});
         throw new Error(d.error||'No se pudo cargar el cancionero');
       }
-      const anterior=leerCancioneroOffline();
+      const anterior=await leerCancioneroOffline();
       CANCIONES=Array.isArray(d.canciones)?d.canciones:[];
       EVENTOS=Array.isArray(d.eventos)?d.eventos:[];
       cancioneroLoaded=true;
-      guardarCancioneroOffline(d);
+      const offlineSaved=await guardarCancioneroOffline(d);
+      $('offlineReadyStatus').textContent=offlineSaved?`Copia guardada · ${CANCIONES.length} canciones`:'No se pudo guardar. Pulsa para reintentar.';
       window.setRehearsalPermission?.(d.permission);
       ultimaSincronizacion=Date.now();
       renderLista($buscador?.value||'');
@@ -1367,11 +1360,11 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       precacheEventCovers();
       mostrarPopupSiNuevo(d.popup);
       if(anterior?.version && anterior.version!==d.version) statusSync(`✅ Cancionero actualizado · versión ${d.version}`);
-      else statusSync(`✅ Versión al día · ${fechaCorta(ultimaSincronizacion)}`);
-      return {offline:false,version:d.version};
+      else statusSync(offlineSaved?`✅ Versión al día · ${fechaCorta(ultimaSincronizacion)}`:'⚠️ Cancionero cargado, pero no se pudo guardar para usar sin conexión.');
+      return {offline:false,version:d.version,offlineSaved};
     }catch(err){
       if(err.authError) throw err;
-      const offline=leerCancioneroOffline();
+      const offline=await leerCancioneroOffline();
       if(offline && Array.isArray(offline.canciones) && offline.canciones.length){
         CANCIONES=offline.canciones;
         EVENTOS=Array.isArray(offline.eventos)?offline.eventos:[];
@@ -1388,6 +1381,25 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       sincronizando=false;
     }
   }
+
+  $('btnOfflinePrepare').onclick=async()=>{
+    const button=$('btnOfflinePrepare'),label=$('offlineReadyStatus');button.disabled=true;
+    try{
+      label.textContent='Preparando copia…';
+      if(!currentUser?.approved)throw Error('Inicia sesión primero.');
+      if(!navigator.onLine)throw Error('Conéctate para preparar la copia.');
+      const result=await cargarCancionero({forzar:true});
+      if(result?.offline||!result?.offlineSaved)throw Error('No se pudo guardar la copia. Reintenta con conexión.');
+      await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
+      await navigator.serviceWorker.ready;
+      const shell=await caches.open('cancionero-tuna-derecho-v75');
+      if(!await shell.match('/')||!await shell.match('/offline-data.js?v=75'))throw Error('La actualización sigue instalándose. Espera la recarga y pulsa de nuevo.');
+      if(!await window.cancioneroOffline.read(currentUser))throw Error('No se pudo comprobar la copia.');
+      navigator.storage?.persist?.().catch(()=>{});
+      label.textContent=`Disponible sin conexión · ${CANCIONES.length} canciones`;
+      statusSync('✅ Cancionero preparado para abrir sin conexión en este dispositivo.');
+    }catch(err){label.textContent=err.message;}finally{button.disabled=false;}
+  };
 
   async function buscarActualizacion(){
     if(!currentUser?.approved || !token() || !navigator.onLine || sincronizando) return;
@@ -1465,8 +1477,8 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     if(!yaSeActualizoHoy()) await actualizacionDiaria();
     await actualizarNotificaciones();
   });
-  window.addEventListener('offline',()=>{
-    const offline=leerCancioneroOffline();
+  window.addEventListener('offline',async()=>{
+    const offline=await leerCancioneroOffline();
     statusSync(offline?`📴 Sin conexión · disponible copia del ${fechaCorta(offline.savedAt)}`:'📴 Sin conexión · aún no hay copia guardada');
   });
 
