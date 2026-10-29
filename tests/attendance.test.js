@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 // Inject the storage and auth boundaries; exercise the real handler without live credentials.
 const source=fs.readFileSync(new URL('../lib/attendance.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
-const {handleAttendance,percentage,upcomingSaturdays,eligibleForSession}=new Function('crypto','kv','getSessionUser','getEvent','getEvents',source+';return {handleAttendance,percentage,upcomingSaturdays,eligibleForSession};')(await import('node:crypto'),{},async req=>req.session,async()=>({id:'colombia'}),async()=>[{id:'colombia',title:'Colombia'}]);
+const {handleAttendance,percentage,upcomingSaturdays,eligibleForSession,activeAttendanceEvents}=new Function('crypto','kv','getSessionUser','getEvent','getEvents',source+';return {handleAttendance,percentage,upcomingSaturdays,eligibleForSession,activeAttendanceEvents};')(await import('node:crypto'),{},async req=>req.session,async()=>({id:'colombia'}),async()=>[{id:'colombia',title:'Colombia'}]);
 function memory(){const m=new Map();return {m,async get(k){return structuredClone(m.get(k));},async set(k,v,o){if(o?.nx&&m.has(k))return null;m.set(k,structuredClone(v));return 'OK';},async incr(k){const n=(m.get(k)||0)+1;m.set(k,n);return n;},async expire(){},async smembers(){return [...m.keys()].filter(k=>k.startsWith('user:')).map(k=>k.slice(5));},async eval(_,keys){m.delete(keys[0]);}};}
 process.env.ADMIN_PASSWORD='test-admin';
-async function request(store,action,body={},user=null){let status=200,result;const req={body:{action,eventId:'colombia',password:'test-admin',...body},session:user?{userId:user,user:{approved:true}}:null};const res={setHeader(){},status(n){status=n;return this;},json(d){result=d;return this;}};await handleAttendance(req,res,store);return {status,...result};}
+async function request(store,action,body={},user=null,handler=handleAttendance){let status=200,result;const req={body:{action,eventId:'colombia',password:'test-admin',...body},session:user?{userId:user,user:{approved:true}}:null};const res={setHeader(){},status(n){status=n;return this;},json(d){result=d;return this;}};await handler(req,res,store);return {status,...result};}
 test('clave temporal, confirmación, duplicados, porcentajes y cancelación',async()=>{const s=memory();s.m.set('user:u',{approved:true,mote:'Tuno'});await request(s,'attendance-admin-member',{userId:'u'});let d=await request(s,'attendance-admin-create',{date:new Date(Date.now()+1000).toISOString()});const id=d.sessions[0].id;d=await request(s,'attendance-admin-open',{sessionId:id});const code=d.sessions[0].code;
 assert.equal((await request(s,'attendance-checkin',{sessionId:id,code:'000000'},'u')).status,400);
 d=await request(s,'attendance-checkin',{sessionId:id,code},'u');assert.equal(d.sessions[0].myStatus,'pending');assert.equal(d.sessions[0].code,undefined);assert.equal(d.members[0].confirmed,0);
@@ -43,3 +43,28 @@ test('unifica dos registros sin duplicar ensayos, mantiene acceso por ambas cuen
 });
 
 test('historial del integrante y total excluyen cancelados con registros antiguos',async()=>{const s=memory();s.m.set('attendance:v1:colombia',{members:{u:{mote:'Tuno',joinedAt:'2026-01-01T00:00:00Z',active:true}},sessions:[{id:'cancelado',date:'2026-10-26T18:30:00Z',status:'cancelled',records:{u:{status:'confirmed'}}},{id:'cerrado',date:'2026-10-24T16:00:00Z',status:'closed',manualOnly:true,records:{u:{status:'confirmed',source:'manual'}}},{id:'abierto',date:'2026-10-23T16:00:00Z',status:'open',manualOnly:true,records:{u:{status:'confirmed',source:'manual'}}}]});const d=await request(s,'attendance-list',{},'u');assert.equal(d.members[0].total,1);assert.equal(d.members[0].confirmed,1);assert.equal(d.sessions.length,2);assert.equal(d.sessions.find(s=>s.id==='abierto').counted,false);assert.equal(d.sessions.find(s=>s.id==='cerrado').counted,true);assert.equal((await request(s,'attendance-admin-list')).sessions.length,3);});
+
+test('listas de asistencia ocultan eventos terminados y conservan hoy, viajes en curso y sábados',async()=>{
+ const now=Date.parse('2026-10-30T02:00:00Z'); // 29 de octubre, 20:00 en México.
+ const events=[
+  {id:'pasado',date:'2026-10-28T19:00:00-06:00'},
+  {id:'hoy',date:'2026-10-29T14:00:00-06:00'},
+  {id:'hoy-sin-hora',date:'2026-10-29'},
+  {id:'viaje',date:'2026-10-20T12:00:00-06:00',endDate:'2026-11-02T12:00:00-06:00'},
+  {id:'terminado',date:'2026-10-29T12:00:00-06:00',endDate:'2026-10-29T19:00:00-06:00'},
+  {id:'futuro',date:'2027-01-03T12:00:00-05:00'},
+  {id:'oculto',date:'2027-01-03T12:00:00-05:00',visible:false},
+  {id:'por-confirmar'},
+  {id:'fecha-invalida',date:'pendiente'}
+ ];
+ const original=structuredClone(events);
+ assert.deepEqual(activeAttendanceEvents(events,now).map(e=>e.id),['hoy','hoy-sin-hora','viaje','futuro','por-confirmar','fecha-invalida']);
+ assert(activeAttendanceEvents(events,now,true).some(e=>e.id==='oculto'));
+ assert.deepEqual(events,original);
+ const s=memory();s.m.set('attendance:v1:pasado',{members:{u:{mote:'Tuno'}},sessions:[{id:'ensayo-realizado',status:'closed'}]});const records=structuredClone(s.m.get('attendance:v1:pasado'));
+ const fixedEvents=[{id:'viejo',title:'Pasado',date:'2000-01-01'},{id:'colombia',title:'Colombia',date:'2099-01-01'},{id:'oculto',title:'Oculto',date:'2099-01-01',visible:false}];
+ const catalogHandler=new Function('crypto','kv','getSessionUser','getEvent','getEvents',source+';return handleAttendance;')({}, {},async req=>req.session,async()=>null,async()=>fixedEvents);
+ const catalog=await request(s,'attendance-catalog',{},'u',catalogHandler);assert.deepEqual(catalog.events.map(e=>e.id),['colombia']);assert.equal(catalog.generalId,'tuna-sabados');assert.deepEqual(s.m.get('attendance:v1:pasado'),records);
+ assert.equal((await request(s,'attendance-admin-catalog',{eventId:'',password:'wrong'})).status,401);
+ const admin=await request(s,'attendance-admin-catalog',{eventId:''},null,catalogHandler);assert.deepEqual(admin.events.map(e=>e.id),['colombia','oculto']);assert.equal(admin.status,200);assert.equal(admin.generalId,'tuna-sabados');
+});
