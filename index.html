@@ -1393,7 +1393,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
       if(result?.offline||!result?.offlineSaved)throw Error('No se pudo guardar la copia. Reintenta con conexión.');
       await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});
       await navigator.serviceWorker.ready;
-      const shell=await caches.open('cancionero-tuna-derecho-v77');
+      const shell=await caches.open('cancionero-tuna-derecho-v78');
       if(!await shell.match('/')||!await shell.match('/offline.html')||!await shell.match('/offline-data.js?v=75'))throw Error('La actualización sigue instalándose. Espera la recarga y pulsa de nuevo.');
       const snapshot=await window.cancioneroOffline.read(currentUser);
       if(!snapshot)throw Error('No se pudo comprobar la copia.');
