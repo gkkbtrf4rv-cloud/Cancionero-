@@ -574,6 +574,13 @@ body.detail-open .premium-bottom-nav{display:none}
 .home-resources{margin:16px 0 24px;display:grid;gap:12px}.home-permission{width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:12px;text-align:left;align-items:center;padding:18px;background:linear-gradient(120deg,#29201a,#171313);border:1px solid rgba(213,173,90,.45);border-radius:16px;color:#f4ead4;cursor:pointer}.home-permission .resource-icon{font-size:26px;color:#d5ad5a}.home-permission strong{display:block;font:700 23px Georgia,serif;margin:4px 0}.home-permission small{color:#d5ad5a;font:600 9px system-ui;letter-spacing:1.3px}.home-permission #permissionStatus{display:block;font:12px/1.5 system-ui;color:#c4b499}.home-tools{border:1px solid rgba(213,173,90,.2);border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}.home-tools summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:16px 18px;font:600 14px system-ui;color:var(--marfil);cursor:pointer}.home-tools summary::-webkit-details-marker{display:none}.home-tools a,.home-tools button{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;width:100%;padding:15px 18px;text-align:left;background:transparent;border:0;border-top:1px solid rgba(213,173,90,.12);border-radius:0;text-decoration:none;color:var(--marfil);cursor:pointer}.home-tools strong{display:block;font:600 14px system-ui}.home-tools small{display:block;font:12px system-ui;color:#b9a98e;margin-top:4px}.offline-settings{padding:14px 0;border-top:1px solid rgba(213,173,90,.2);margin-top:14px}.offline-settings p{font:12px/1.5 system-ui;color:inherit;opacity:.8}.settings-panel{max-height:calc(100dvh - 100px);overflow-y:auto}body.theme-light .home-permission{background:#faf5eb;color:#31261b}body.theme-light .home-tools small,body.theme-light .home-permission #permissionStatus{color:#665842}
 </style><link rel="stylesheet" href="/redesign.css?v=85"></head>
 <body data-page="cancionero" data-ui="app" data-main-view="home">
+<aside id="profile-reminder" hidden style="position:relative;z-index:8;margin:1rem auto;padding:.85rem 1rem;max-width:42rem;background:#29201a;color:#f6ecda;border:1px solid #8e6739;border-radius:.7rem">
+  <strong>Completa tu ficha de emergencia</strong>
+  <p>Es opcional. Puedes llenarla o actualizarla cuando quieras.</p>
+  <a href="/mi-ficha.html" style="color:#f0cd83">Abrir Mi ficha</a>
+  <button type="button" id="profile-reminder-dismiss">Ahora no</button>
+</aside>
+
 <div id="splashScreen" class="splash-screen"><div class="splash-inner"><div class="splash-emblem"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"></div><div class="splash-kicker">Tradición · Música · Hermandad</div><div class="splash-title">Cancionero de Tuna</div><div class="splash-rule"><span>✦</span></div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
 <div class="app">
@@ -729,7 +736,7 @@ body.detail-open .premium-bottom-nav{display:none}
       <p class="registration-legal">Antes de registrarte, consulta los <a href="/terminos.html">Términos de uso</a> y el <a href="/privacidad.html">Aviso de privacidad</a>.</p><button class="auth-submit" type="submit">Crear cuenta</button>
     </form>
     <div id="authMsg" class="auth-msg"></div>
-    <div id="loggedActions" style="display:none;margin-top:12px"><button id="btnCerrarSesion" class="account-btn">Cerrar sesión</button></div>
+    <div id="loggedActions" style="display:none;margin-top:12px"><a id="profile-account-link" class="account-btn" href="/mi-ficha.html" hidden>Mi ficha</a><button id="btnCerrarSesion" class="account-btn">Cerrar sesión</button></div>
   </div>
 </div>
 
@@ -1268,7 +1275,37 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
   });
   $('btnReenviarVerificacion').addEventListener('click',async()=>{ const email=$('loginEmail').value.trim(); if(!email){authMsg.className='auth-msg err';authMsg.textContent='Escribe tu correo electrónico primero.';return;} try{authMsg.className='auth-msg';authMsg.textContent='Enviando nuevo enlace…'; const d=await authRequest('/api/resend-verification',{email}); authMsg.className=d.sent===false?'auth-msg err':'auth-msg ok';authMsg.textContent=d.message||'Si la cuenta está pendiente, te enviaremos un nuevo enlace.';}catch(err){authMsg.className='auth-msg err';authMsg.textContent=err.message;}});
   $('btnCerrarSesion').onclick=async()=>{try{await fetch('/api/logout',{method:'POST',headers:authHeaders()})}catch{} await window.cancioneroOffline?.clear();await window.clearRehearsalPermission?.();localStorage.removeItem('cancionero_token');localStorage.removeItem('cancionero_user_cache');localStorage.removeItem('cancionero_offline_data_v1');localStorage.removeItem(EVENT_DETAIL_CACHE_KEY);try{if('caches'in window)await caches.delete(PRIVATE_ASSET_CACHE_NAME);}catch{}currentUser=null;cancioneroLoaded=false;CANCIONES=[];renderCuenta();authModal.classList.remove('open');aplicarAcceso();actualizarNotificaciones();};
-  function renderCuenta(){ if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
+  let profileReminderUser = null;
+  async function refreshProfileReminder(user) {
+    const reminder = $('profile-reminder');
+    if (user?.approved !== true || !token()) {
+      reminder.hidden = true;
+      profileReminderUser = null;
+      return;
+    }
+    if (profileReminderUser === user.id) return;
+    profileReminderUser = user.id;
+    try {
+      const key = 'profile-reminder:' + user.id;
+      const last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last < 86400000) return;
+      const response = await fetch('/api/cancionero', {
+        method: 'POST', cache: 'no-store',
+        headers: {...authHeaders(), 'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'profile-status'})
+      });
+      if (!response.ok) throw new Error();
+      const result = await response.json();
+      if (currentUser?.id !== user.id || !currentUser.approved || result.submitted) return;
+      reminder.hidden = false;
+      localStorage.setItem(key, String(Date.now()));
+    } catch {
+      if (profileReminderUser === user.id) profileReminderUser = null;
+    }
+  }
+  $('profile-reminder-dismiss').onclick = () => { $('profile-reminder').hidden = true; };
+
+  function renderCuenta(){ $('profile-account-link').hidden = currentUser?.approved !== true; refreshProfileReminder(currentUser); if(cancioneroLoaded)renderFavorites(); $('accountText').innerHTML=currentUser?`👤 <span class="account-name">${escapeHtml(currentUser.mote)}</span> · ${escapeHtml(currentUser.email)} ${currentUser.approved?'✅':'⏳'}`:'👤 Sin sesión'; $('btnCuenta').textContent=currentUser?'Mi cuenta':'Iniciar sesión / registrarme'; }
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const OFFLINE_DATA_KEY='cancionero_offline_data_v1';
   const USER_CACHE_KEY='cancionero_user_cache';

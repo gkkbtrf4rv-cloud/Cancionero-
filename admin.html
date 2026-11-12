@@ -59,6 +59,20 @@ table{border-collapse:separate;border-spacing:0}th{color:var(--admin-gold-soft);
 
 <div class="card"><h2>🔐 Acceso al cancionero</h2><p style="font-size:13px;color:#d6cda9">Los registros con el mismo mote se agrupan en una sola fila. Si un integrante tiene varias cuentas, puedes administrar todas juntas.</p><div class="actions"><button type="button" class="secondary" id="btnUsuarios">Actualizar usuarios</button><button type="button" class="secondary" id="btnIntegrantesEstado">Actualizar dispositivos</button></div><div id="usersSummary" class="summary"></div></div>
 
+<section class="card" id="member-directory">
+<h2>Directorio privado</h2>
+<p class="hint">Consulta una ficha solo en caso de emergencia. Antes de vincularla, verifica que la cuenta corresponda al integrante.</p>
+<label for="member-directory-file">Archivo de fichas preparado para importar</label>
+<input id="member-directory-file" type="file" accept=".json,application/json">
+<div class="actions"></div>
+<p class="msg" role="status"></p>
+<ul id="member-directory-list"></ul>
+<dialog style="max-width:min(90vw,42rem);max-height:85vh">
+<h3>Ficha privada</h3><dl></dl><form method="dialog"><button>Cerrar ficha</button></form>
+</dialog>
+</section>
+<script type="module" src="/admin-assets/member-profiles.js"></script>
+
 <div class="card"><h2>⏳ Solicitudes pendientes</h2><p style="font-size:13px;color:#d6cda9">Integrantes que verificaron su correo y todavía esperan tu autorización.</p><div class="table-wrap"><table><thead><tr><th>Mote</th><th>Correo</th><th>Dispositivos</th><th>Último acceso</th><th>Acción</th></tr></thead><tbody id="pendingUsersBody"><tr><td colspan="5">Pulsa “Actualizar usuarios”.</td></tr></tbody></table></div></div>
 
 <div class="card"><h2>✅ Integrantes con acceso</h2><p style="font-size:13px;color:#d6cda9">Aquí permanecen visibles todos los integrantes que actualmente pueden entrar al cancionero.</p><div class="table-wrap"><table><thead><tr><th>Mote</th><th>Correo</th><th>Dispositivos</th><th>Último acceso</th><th>Acción</th></tr></thead><tbody id="approvedUsersBody"><tr><td colspan="5">Pulsa “Actualizar usuarios”.</td></tr></tbody></table></div></div>

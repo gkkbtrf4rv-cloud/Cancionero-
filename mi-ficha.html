@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi ficha · Cancionero</title>
+<link rel="stylesheet" href="/mi-ficha.css">
+<script type="module" src="/mi-ficha.js"></script>
+</head>
+<body>
+<main>
+  <a class="back" href="/">← Volver al cancionero</a>
+  <h1>Mi ficha</h1>
+  <p class="privacy"><strong>Solo tú y el administrador pueden ver esta ficha.</strong>
+    El administrador puede consultarla en caso de emergencia. Puedes completar o actualizar tus datos cuando quieras.
+    Puedes seguir usando el cancionero aunque dejes la ficha vacía.</p>
+  <p id="profile-status" role="status">Abriendo tu ficha…</p>
+  <form id="profile-form" autocomplete="off" hidden>
+    <p id="profile-mote"></p>
+    <fieldset>
+      <legend>Datos personales</legend>
+      <div class="fields">
+        <label>Nombre completo<input name="name" maxlength="160" required></label>
+        <label>Rango<input name="rank" maxlength="80"></label>
+        <label>Fecha de nacimiento<input name="birthDate" type="date"></label>
+        <label>Matrícula<input name="schoolId" maxlength="80"></label>
+        <label>Correo de contacto<input name="contactEmail" maxlength="254" inputmode="email"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>En caso de emergencia</legend>
+      <label>Contacto de emergencia<textarea name="emergencyContact" rows="2" maxlength="500" placeholder="Nombre, parentesco y teléfono"></textarea></label>
+      <div class="fields">
+        <label>Alergias<textarea name="allergies" maxlength="1000"></textarea></label>
+        <label>Enfermedades o condiciones<textarea name="conditions" maxlength="1000"></textarea></label>
+        <label>Medicamentos<textarea name="medications" maxlength="1000"></textarea></label>
+        <label>Tipo de sangre<input name="bloodType" maxlength="30"></label>
+      </div>
+      <label>Información adicional<textarea name="notes" maxlength="1500"></textarea></label>
+    </fieldset>
+    <button type="submit">Guardar mi ficha</button>
+  </form>
+</main>
+</body>
+</html>
