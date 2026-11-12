@@ -1295,7 +1295,7 @@ window.abrirEvento=async function(eventId,{pushHistory=true}={}){
     if (profileReminderUser === user.id) return;
     profileReminderUser = user.id;
     try {
-      const key = 'profile-reminder:' + user.id;
+      const key = 'profile-reminder:v2:' + user.id;
       const last = Number(localStorage.getItem(key) || 0);
       if (Date.now() - last < 86400000) return;
       const response = await fetch('/api/cancionero', {
