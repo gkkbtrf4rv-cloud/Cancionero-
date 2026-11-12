@@ -572,15 +572,16 @@ body.detail-open .premium-bottom-nav{display:none}
   <link rel="preload" href="/logo-tuna.webp" as="image" type="image/webp">
 <link rel="stylesheet" href="/responsive.css?v=63"><link rel="stylesheet" href="/site-footer.css?v=63"><script src="/site-footer.js?v=61" defer></script><link rel="stylesheet" href="/safe-area.css?v=64"><style>
 .home-resources{margin:16px 0 24px;display:grid;gap:12px}.home-permission{width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:12px;text-align:left;align-items:center;padding:18px;background:linear-gradient(120deg,#29201a,#171313);border:1px solid rgba(213,173,90,.45);border-radius:16px;color:#f4ead4;cursor:pointer}.home-permission .resource-icon{font-size:26px;color:#d5ad5a}.home-permission strong{display:block;font:700 23px Georgia,serif;margin:4px 0}.home-permission small{color:#d5ad5a;font:600 9px system-ui;letter-spacing:1.3px}.home-permission #permissionStatus{display:block;font:12px/1.5 system-ui;color:#c4b499}.home-tools{border:1px solid rgba(213,173,90,.2);border-radius:14px;background:rgba(255,255,255,.025);overflow:hidden}.home-tools summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:16px 18px;font:600 14px system-ui;color:var(--marfil);cursor:pointer}.home-tools summary::-webkit-details-marker{display:none}.home-tools a,.home-tools button{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;width:100%;padding:15px 18px;text-align:left;background:transparent;border:0;border-top:1px solid rgba(213,173,90,.12);border-radius:0;text-decoration:none;color:var(--marfil);cursor:pointer}.home-tools strong{display:block;font:600 14px system-ui}.home-tools small{display:block;font:12px system-ui;color:#b9a98e;margin-top:4px}.offline-settings{padding:14px 0;border-top:1px solid rgba(213,173,90,.2);margin-top:14px}.offline-settings p{font:12px/1.5 system-ui;color:inherit;opacity:.8}.settings-panel{max-height:calc(100dvh - 100px);overflow-y:auto}body.theme-light .home-permission{background:#faf5eb;color:#31261b}body.theme-light .home-tools small,body.theme-light .home-permission #permissionStatus{color:#665842}
+#profile-reminder{position:relative;margin:12px auto 16px;max-width:42rem;padding:14px 16px;background:#242428;color:#f5f5f7;border:1px solid #55555e;border-radius:14px}
+#profile-reminder[hidden]{display:none}
+#profile-reminder h2{font:700 clamp(16px,4vw,20px)/1.3 system-ui,sans-serif;margin:0}
+#profile-reminder p{font:400 14px/1.5 system-ui,sans-serif;margin:5px 0 10px;color:#e5e5e9}
+.profile-reminder-actions{display:flex;gap:8px;flex-wrap:wrap}
+.profile-reminder-actions :is(a,button){display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:7px 13px;font:600 14px/1.2 system-ui,sans-serif;border-radius:9px;text-decoration:none;cursor:pointer}
+.profile-reminder-actions a{background:#f4f4f6;color:#19191c}
+.profile-reminder-actions button{background:#242428;color:#f5f5f7;border:1px solid #707079}
 </style><link rel="stylesheet" href="/redesign.css?v=85"></head>
 <body data-page="cancionero" data-ui="app" data-main-view="home">
-<aside id="profile-reminder" hidden style="position:relative;z-index:8;margin:1rem auto;padding:.85rem 1rem;max-width:42rem;background:#29201a;color:#f6ecda;border:1px solid #8e6739;border-radius:.7rem">
-  <strong>Completa tu ficha de emergencia</strong>
-  <p>Es opcional. Puedes llenarla o actualizarla cuando quieras.</p>
-  <a href="/mi-ficha.html" style="color:#f0cd83">Abrir Mi ficha</a>
-  <button type="button" id="profile-reminder-dismiss">Ahora no</button>
-</aside>
-
 <div id="splashScreen" class="splash-screen"><div class="splash-inner"><div class="splash-emblem"><img class="splash-logo" src="/icon-192.png" alt="Tuna de Derecho"></div><div class="splash-kicker">Tradición · Música · Hermandad</div><div class="splash-title">Cancionero de Tuna</div><div class="splash-rule"><span>✦</span></div><div class="splash-sub">Tuna de Derecho · FES Acatlán · UNAM</div></div></div>
 
 <div class="app">
@@ -597,6 +598,14 @@ body.detail-open .premium-bottom-nav{display:none}
   </header>
 
   <main>
+    <aside id="profile-reminder" aria-labelledby="profile-reminder-title" hidden>
+      <h2 id="profile-reminder-title">Completa tu ficha de emergencia</h2>
+      <p>Es opcional. Puedes llenarla o actualizarla cuando quieras.</p>
+      <div class="profile-reminder-actions">
+        <a href="/mi-ficha.html">Abrir Mi ficha</a>
+        <button type="button" id="profile-reminder-dismiss">Ahora no</button>
+      </div>
+    </aside>
     <section id="vista-lista">
       <div class="songs-tools" id="songsTools">
         <div class="search-wrap" id="searchArea">
